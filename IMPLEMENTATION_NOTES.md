@@ -85,12 +85,16 @@ Coordinates the restaurant agent:
 CityAssistant.sln
 ├── service-defaults
 ├── restaurant-agent
-├── orchestrator-agent
-└── aspire (AppHost)
+└── orchestrator-agent
+
+src/aspire/ (not in solution - single-file apphost)
+├── apphost.cs
+└── apphost.run.json (launchsettings.json format)
 ```
 
 **Configuration Files:**
-- `apphost.run.json` - Aspire runtime configuration template
+- `apphost.cs` - Single-file Aspire orchestration with #:sdk and #:package directives
+- `apphost.run.json` - Launch settings for the Aspire host
 - `appsettings.json` - Application settings for each agent
 - `.gitignore` - Comprehensive ignore rules
 - `README.md` - User documentation
@@ -164,10 +168,11 @@ All Agent Framework packages use wildcards for preview versions:
 
 ## Known Limitations
 
-1. **Aspire Orchestration:** The AppHost project is simplified as a placeholder because:
-   - .NET 10 deprecated the Aspire workload
-   - Moved to NuGet package-based approach
-   - Some hosting extensions not yet available for .NET 10
+1. **Aspire Orchestration:** Uses single-file C# script-based apphost (apphost.cs) with:
+   - #:sdk and #:package directives for dependencies
+   - No csproj file needed
+   - Requires .NET 10 SDK with Aspire support
+   - Cosmos DB emulator for local development
 
 2. **Mock Data Only:** Restaurant data is hardcoded in memory
    - No external database
@@ -201,7 +206,6 @@ Potential improvements:
 5. Add logging and monitoring
 6. Create Docker containers
 7. Add integration tests
-8. Implement proper Aspire orchestration when packages are available
 
 ## Build Warnings
 

@@ -37,7 +37,24 @@ Create appsettings.Development.json files or set environment variables for:
 
 ## Running the Application
 
-### Option 1: Run Each Component Separately
+### Option 1: Run with Aspire (Recommended)
+
+The application uses Aspire for orchestration with a single-file C# script-based apphost:
+
+```bash
+cd src/aspire
+dotnet run --project apphost.cs
+```
+
+This will:
+- Start the Cosmos DB emulator
+- Launch the restaurant agent
+- Launch the orchestrator agent
+- Start the frontend
+- Configure all inter-agent communication via A2A
+- Open the Aspire dashboard for monitoring
+
+### Option 2: Run Each Component Separately
 
 1. **Start the Restaurant Agent**:
    ```bash
@@ -63,7 +80,7 @@ Create appsettings.Development.json files or set environment variables for:
 
 4. Open your browser to http://localhost:5173
 
-### Option 2: Build All Projects
+### Option 3: Build All Projects
 
 ```bash
 dotnet build CityAssistant.sln
