@@ -1,13 +1,9 @@
+using System.Text.Json.Serialization;
+
 namespace OrchestratorAgent.Models;
 
-public class AIChatRequest
+public record AIChatRequest([property: JsonPropertyName("messages")] IList<AIChatMessage> Messages)
 {
-    public List<AIChatMessage> Messages { get; set; } = new();
-    public string? SessionState { get; set; }
-}
-
-public class AIChatMessage
-{
-    public required string Role { get; set; }
-    public required string Content { get; set; }
+    [JsonInclude, JsonPropertyName("sessionState")]
+    public string? SessionState;
 }

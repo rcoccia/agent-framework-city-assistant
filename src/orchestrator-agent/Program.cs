@@ -95,41 +95,29 @@ app.MapPost("/agent/chat/stream", async (
     else
     {
         var message = request.Messages.LastOrDefault();
-        if (message == null)
-        {
-            return Results.BadRequest("No message provided");
-        }
 
         var thread = await threadStore.GetThreadAsync(agent, conversationId);
         var chatMessage = new ChatMessage(ChatRole.User, message.Content);
 
-        try
+        // Stream responses
+        await foreach (var update in agent.RunStreamingAsync(chatMessage, thread))
         {
-            // Stream responses
-            await foreach (var update in agent.RunStreamingAsync(chatMessage, thread))
+            if (!string.IsNullOrEmpty(update.Text))
             {
-                if (!string.IsNullOrEmpty(update.Text))
+                var delta = new AIChatCompletionDelta(new AIChatMessageDelta()
                 {
-                    var delta = new AIChatCompletionDelta(new AIChatMessageDelta()
-                    {
-                        Content = update.Text
-                    })
-                    {
-                        SessionState = conversationId
-                    };
+                    Content = update.Text
+                })
+                {
+                    SessionState = conversationId
+                };
 
-                    await response.WriteAsync($"{JsonSerializer.Serialize(delta)}\r\n");
-                    await response.Body.FlushAsync();
-                }
+                await response.WriteAsync($"{JsonSerializer.Serialize(delta)}\r\n");
+                await response.Body.FlushAsync();
             }
+        }
 
-            await threadStore.SaveThreadAsync(agent, conversationId, thread);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error processing chat request");
-            return Results.Problem("An error occurred processing your request");
-        }
+        await threadStore.SaveThreadAsync(agent, conversationId, thread);
     }
 
     return Results.Ok();
