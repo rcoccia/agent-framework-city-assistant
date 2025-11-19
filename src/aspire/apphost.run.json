@@ -5,24 +5,24 @@
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,
-      "applicationUrl": "https://cityassistant.dev.localhost:17093;http://cityassistant.dev.localhost:15111",
+      "applicationUrl": "https://cityassistant.dev.localhost:17094;http://cityassistant.dev.localhost:15112",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "DOTNET_ENVIRONMENT": "Development",
-        "ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL": "https://localhost:21193",
-        "ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL": "https://localhost:22196"
+        "ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL": "https://localhost:21194",
+        "ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL": "https://localhost:22197"
       }
     },
     "http": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,
-      "applicationUrl": "http://cityassistant.dev.localhost:15111",
+      "applicationUrl": "http://cityassistant.dev.localhost:15112",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "DOTNET_ENVIRONMENT": "Development",
-        "ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL": "http://localhost:19005",
-        "ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL": "http://localhost:20129",
+        "ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL": "http://localhost:19006",
+        "ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL": "http://localhost:20130",
         "ASPIRE_ALLOW_UNSECURED_TRANSPORT": "true"
       }
     }
