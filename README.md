@@ -17,74 +17,40 @@ The application consists of three main components:
 - Azure AI Inference (Foundry) connection
 - Azure Cosmos DB instance
 
-## Configuration
+## Run the sample
 
-### Environment Variables
+> This sample requires latest .Net 10 Preview SDK (RC2) and Python 3.11+ installed on your machine.
 
-Create appsettings.Development.json files or set environment variables for:
+To allow Aspire to create or reference existing resources on Azure (e.g. Foundry), you need to configure Azure settings in the [appsettings.json](./src/aspire/appsettings.json) file:
 
-**Restaurant Agent**:
-- `ConnectionStrings__foundry`: Your Azure AI Inference connection string
-- `ConnectionStrings__cosmos`: Your Azure Cosmos DB connection string
-
-**Orchestrator Agent**:
-- `ConnectionStrings__foundry`: Your Azure AI Inference connection string
-- `ConnectionStrings__cosmos`: Your Azure Cosmos DB connection string  
-- `services__restaurant-agent__https__0`: URL where restaurant agent is running (e.g., `https://localhost:5196`)
-
-**Frontend**:
-- Automatically proxies requests to orchestrator agent (configured in vite.config.ts)
-
-## Running the Application
-
-### Option 1: Run with Aspire (Recommended)
-
-The application uses Aspire for orchestration with a single-file C# script-based apphost:
-
-```bash
-cd src/aspire
-dotnet run --project apphost.cs
+```json
+"Azure": {
+  "TenantId": "<YOUR-TENANT-ID>",
+  "SubscriptionId": "<YOUR-SUBSCRIPTION-ID>",
+  "AllowResourceGroupCreation": false,
+  "Location": "<YOUR-LOCATION>",
+  "CredentialSource": "AzureCli"
+}
 ```
 
-This will:
-- Start the Cosmos DB emulator
-- Launch the restaurant agent
-- Launch the orchestrator agent
-- Start the frontend
-- Configure all inter-agent communication via A2A
-- Open the Aspire dashboard for monitoring
+Use [aspire cli](https://learn.microsoft.com/en-us/dotnet/aspire/cli/install) to run the sample.
 
-### Option 2: Run Each Component Separately
-
-1. **Start the Restaurant Agent**:
-   ```bash
-   cd src/restaurant-agent
-   dotnet run
-   ```
-   The restaurant agent will start on https://localhost:5196 (or the port specified in launchSettings.json)
-
-2. **Start the Orchestrator Agent**:
-   ```bash
-   cd src/orchestrator-agent
-   dotnet run
-   ```
-   The orchestrator agent will start on https://localhost:5197 (or the port specified in launchSettings.json)
-
-3. **Start the Frontend**:
-   ```bash
-   cd src/frontend
-   npm install  # First time only
-   npm run dev
-   ```
-   The frontend will start on http://localhost:5173
-
-4. Open your browser to http://localhost:5173
-
-### Option 3: Build All Projects
-
+Powershell:
 ```bash
-dotnet build CityAssistant.sln
+iex "& { $(irm https://aspire.dev/install.ps1) } -InstallExtension"
+
+aspire run
 ```
+
+Bash:
+```bash
+curl -sSL https://aspire.dev/install.sh -o aspire-install.sh
+./aspire-install.sh -InstallExtension
+
+aspire run
+```
+
+To ease the debug experience, you can use the [Aspire extension for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=microsoft-aspire.aspire-vscode#:~:text=The%20Aspire%20VS%20Code%20extension,directly%20from%20Visual%20Studio%20Code.).
 
 ## Features
 
