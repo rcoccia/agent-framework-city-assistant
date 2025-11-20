@@ -79,3 +79,5 @@ Thumbs.db
 
 # Aspire
 .aspire/
+*/*.Development.Json
+**/*.Development.Json
