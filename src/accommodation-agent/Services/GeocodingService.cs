@@ -51,7 +51,15 @@ public class GeocodingService : IGeocodingService
             return Task.FromResult<(double Latitude, double Longitude)?>(coordinates);
         }
 
-        _logger.LogWarning("Unable to geocode '{Query}'. Location not found in mock data.", query);
-        return Task.FromResult<(double Latitude, double Longitude)?>(null);
+        // Generate realistic but random coordinates in the Rome/Lazio area when location not found
+        // Rome/Lazio region roughly: Latitude 41.4-42.2, Longitude 12.2-13.5
+        var random = new Random(query.GetHashCode()); // Use query hash for deterministic randomness
+        var randomLat = 41.4 + (random.NextDouble() * 0.8); // 41.4 to 42.2
+        var randomLon = 12.2 + (random.NextDouble() * 1.3); // 12.2 to 13.5
+        
+        _logger.LogWarning("Location '{Query}' not found in mock data. Returning random coordinates in Lazio region: {Lat}, {Lon}", 
+            query, randomLat, randomLon);
+        
+        return Task.FromResult<(double Latitude, double Longitude)?>((randomLat, randomLon));
     }
 }

@@ -13,5 +13,5 @@ public interface IAccommodationService
         double? maxDistanceKm = null,
         List<string>? amenities = null,
         decimal? maxPricePerNight = null,
-        string? type = null);
+        AccommodationType? type = null);
 }

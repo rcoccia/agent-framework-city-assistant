@@ -4,7 +4,7 @@ public class Accommodation
 {
     public required string Id { get; set; }
     public required string Name { get; set; }
-    public required string Type { get; set; }
+    public required AccommodationType Type { get; set; }
     public required double Rating { get; set; }
     public required List<string> Amenities { get; set; }
     public required Location Position { get; set; }
