@@ -9,30 +9,52 @@ namespace AccommodationAgent.Tools;
 public class AccommodationTools
 {
     private readonly IAccommodationService _accommodationService;
-    private readonly RerankingService _rerankingService;
+    private readonly IRerankingService _rerankingService;
+    private readonly IGeocodingService _geocodingService;
     private readonly ILogger<AccommodationTools> _logger;
-
-    // Known landmarks with coordinates
-    private static readonly Dictionary<string, (double Latitude, double Longitude)> KnownLandmarks = new(StringComparer.OrdinalIgnoreCase)
-    {
-        { "colosseum", (41.8902, 12.4922) },
-        { "coliseum", (41.8902, 12.4922) },
-        { "roman forum", (41.8925, 12.4853) },
-        { "vatican", (41.9029, 12.4534) },
-        { "pantheon", (41.8986, 12.4768) },
-        { "trevi fountain", (41.9009, 12.4833) },
-        { "spanish steps", (41.9058, 12.4823) },
-        { "trastevere", (41.8899, 12.4707) }
-    };
 
     public AccommodationTools(
         IAccommodationService accommodationService,
-        RerankingService rerankingService,
+        IRerankingService rerankingService,
+        IGeocodingService geocodingService,
         ILogger<AccommodationTools> logger)
     {
         _accommodationService = accommodationService;
         _rerankingService = rerankingService;
+        _geocodingService = geocodingService;
         _logger = logger;
+    }
+
+    [Description("Geocode an address or landmark to get its coordinates (latitude, longitude)")]
+    public async Task<string> GeocodeLocationAsync(
+        [Description("Address or landmark name to geocode (e.g., 'Colosseum', 'Vatican', 'Rome', 'Latina')")] string location)
+    {
+        try
+        {
+            var coordinates = await _geocodingService.GeocodeAsync(location);
+            
+            if (coordinates.HasValue)
+            {
+                return JsonSerializer.Serialize(new
+                {
+                    location,
+                    latitude = coordinates.Value.Latitude,
+                    longitude = coordinates.Value.Longitude,
+                    message = $"Successfully geocoded '{location}' to coordinates."
+                });
+            }
+            
+            return JsonSerializer.Serialize(new
+            {
+                location,
+                message = $"Unable to geocode '{location}'. Location not found."
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error geocoding location {Location}", location);
+            return JsonSerializer.Serialize(new { error = "An error occurred while geocoding the location." });
+        }
     }
 
     [Description("Search for accommodations based on various criteria including rating, location, amenities, price, and type")]
@@ -40,32 +62,15 @@ public class AccommodationTools
         [Description("The user's original search query to use for reranking results")] string userQuery,
         [Description("Minimum user rating from 1 to 5 (e.g., 4 means at least 4 stars)")] double? minRating = null,
         [Description("City name to search in (e.g., 'Rome', 'Latina')")] string? city = null,
-        [Description("Landmark or place name to search near (e.g., 'Colosseum', 'Vatican')")] string? nearLandmark = null,
-        [Description("Maximum distance from the landmark in kilometers")] double? maxDistanceKm = null,
+        [Description("Latitude coordinate for proximity search")] double? latitude = null,
+        [Description("Longitude coordinate for proximity search")] double? longitude = null,
+        [Description("Maximum distance from the coordinates in kilometers")] double? maxDistanceKm = null,
         [Description("List of required amenities (all must be present). Options include: parking, room-service, breakfast, wifi, gym, spa, restaurant, pool, bar, air-conditioning, 24-hour-reception, concierge, shared-kitchen")] List<string>? amenities = null,
         [Description("Maximum price per night in euros")] decimal? maxPricePerNight = null,
         [Description("Type of accommodation (e.g., 'hotel', 'bed-and-breakfast', 'hostel')")] string? type = null)
     {
         try
         {
-            double? latitude = null;
-            double? longitude = null;
-
-            // If searching near a landmark, get its coordinates
-            if (!string.IsNullOrWhiteSpace(nearLandmark))
-            {
-                if (KnownLandmarks.TryGetValue(nearLandmark, out var coordinates))
-                {
-                    latitude = coordinates.Latitude;
-                    longitude = coordinates.Longitude;
-                    _logger.LogInformation("Found coordinates for landmark {Landmark}: {Lat}, {Lon}", nearLandmark, latitude, longitude);
-                }
-                else
-                {
-                    _logger.LogWarning("Unknown landmark: {Landmark}. Ignoring location filter.", nearLandmark);
-                }
-            }
-
             // Search accommodations with filters
             var accommodations = _accommodationService.SearchAccommodations(
                 minRating: minRating,
@@ -127,6 +132,7 @@ public class AccommodationTools
 
     public IEnumerable<AIFunction> GetFunctions()
     {
+        yield return AIFunctionFactory.Create(GeocodeLocationAsync);
         yield return AIFunctionFactory.Create(SearchAccommodationsAsync);
         yield return AIFunctionFactory.Create(GetAllAccommodations);
     }

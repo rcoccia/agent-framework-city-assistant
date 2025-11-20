@@ -23,7 +23,8 @@ builder.AddAzureChatCompletionsClient(connectionName: "foundry",
 
 // Register services
 builder.Services.AddSingleton<IAccommodationService, AccommodationService>();
-builder.Services.AddSingleton<RerankingService>();
+builder.Services.AddSingleton<IRerankingService, RerankingService>();
+builder.Services.AddSingleton<IGeocodingService, GeocodingService>();
 builder.Services.AddSingleton<AccommodationTools>();
 
 // Register OpenAI endpoints
@@ -44,9 +45,20 @@ builder.AddAIAgent("accommodation-agent", (sp, key) =>
 
     var agent = chatClient.CreateAIAgent(
         instructions: @"You are a helpful accommodation assistant. You help users find accommodations (hotels, B&Bs, hostels) based on their preferences.
+
+AVAILABLE TOOLS:
+1. GeocodeLocationAsync - Convert addresses or landmark names to coordinates (latitude, longitude)
+2. SearchAccommodationsAsync - Search for accommodations using coordinates and other filters
+3. GetAllAccommodations - Get all available accommodations
+
+SEARCH WORKFLOW:
+When users mention a location (landmark or address), first use GeocodeLocationAsync to get the coordinates, then use those coordinates with SearchAccommodationsAsync.
+
 You can search for accommodations by:
 - User rating (e.g., 'find me the best hotels', 'hotels rated more than 4')
-- Location (city name like 'Rome' or 'Latina', or near landmarks like 'Colosseum', 'Vatican')
+- Location using coordinates (convert landmarks/addresses to coordinates first)
+  * For landmarks like 'Colosseum', 'Vatican', use GeocodeLocationAsync first
+  * Then use the latitude/longitude with SearchAccommodationsAsync
 - Amenities/services (e.g., 'with parking', 'with room service', 'with breakfast')
 - Price per night (e.g., 'less than 50€ per night', 'under 100 euros')
 - Type (e.g., 'hotel', 'bed-and-breakfast', 'hostel')
@@ -54,7 +66,6 @@ You can search for accommodations by:
 Multiple criteria can be combined (e.g., 'find me a hotel near the Colosseum with parking for less than 80€ per night').
 
 Always be friendly and provide detailed information about the accommodations including their name, type, rating, address, amenities, price, and description.
-When users ask about accommodations, use the available tools to retrieve the most relevant information.
 The search results are automatically reranked using AI to show only the most relevant options for the user's query.",
         description: "A friendly accommodation assistant that helps find hotels, B&Bs, and other lodging",
         name: key,
