@@ -199,11 +199,13 @@ You can test the agent's A2A endpoint directly:
 curl https://localhost:5197/agenta2a/v1/card
 
 # Send a message to the orchestrator
+# Note: messageId should be a unique UUID for each message
+# Note: contextId maintains conversation continuity across requests
 curl -X POST https://localhost:5197/agenta2a/v1/run \
   -H "Content-Type: application/json" \
   -d '{
     "message": {
-      "messageId": "unique-id-123",
+      "messageId": "550e8400-e29b-41d4-a716-446655440000",
       "role": "user",
       "kind": "message",
       "parts": [
@@ -211,7 +213,8 @@ curl -X POST https://localhost:5197/agenta2a/v1/run \
           "kind": "text",
           "text": "Find me a vegetarian restaurant"
         }
-      ]
+      ],
+      "contextId": "conversation-abc123"
     }
   }'
 ```
