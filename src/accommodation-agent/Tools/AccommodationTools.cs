@@ -67,24 +67,10 @@ public class AccommodationTools
         [Description("Maximum distance from the coordinates in kilometers")] double? maxDistanceKm = null,
         [Description("List of required amenities (all must be present). Options include: parking, room-service, breakfast, wifi, gym, spa, restaurant, pool, bar, air-conditioning, 24-hour-reception, concierge, shared-kitchen")] List<string>? amenities = null,
         [Description("Maximum price per night in euros")] decimal? maxPricePerNight = null,
-        [Description("Type of accommodation. Options: Hotel, BedAndBreakfast, Hostel, Apartment, Resort, Guesthouse, Motel, Villa, Boutique")] string? type = null)
+        [Description("Type of accommodation")] AccommodationType? type = null)
     {
         try
         {
-            // Parse accommodation type if provided
-            AccommodationType? accommodationType = null;
-            if (!string.IsNullOrWhiteSpace(type))
-            {
-                if (Enum.TryParse<AccommodationType>(type, ignoreCase: true, out var parsedType))
-                {
-                    accommodationType = parsedType;
-                }
-                else
-                {
-                    _logger.LogWarning("Invalid accommodation type: {Type}. Ignoring type filter.", type);
-                }
-            }
-
             // Search accommodations with filters
             var accommodations = _accommodationService.SearchAccommodations(
                 minRating: minRating,
@@ -94,7 +80,7 @@ public class AccommodationTools
                 maxDistanceKm: maxDistanceKm,
                 amenities: amenities,
                 maxPricePerNight: maxPricePerNight,
-                type: accommodationType);
+                type: type);
 
             if (accommodations.Count == 0)
             {
