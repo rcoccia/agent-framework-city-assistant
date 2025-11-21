@@ -7,7 +7,6 @@ public interface IAccommodationService
     List<Accommodation> GetAllAccommodations();
     List<Accommodation> SearchAccommodations(
         double? minRating = null,
-        string? city = null,
         double? latitude = null,
         double? longitude = null,
         double? maxDistanceKm = 1.0,

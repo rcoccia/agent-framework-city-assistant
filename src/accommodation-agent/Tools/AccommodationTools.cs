@@ -70,10 +70,9 @@ public class AccommodationTools
     {
         try
         {
-            // Search accommodations with filters
+            // Search accommodations with filters (all location searches use geocoding + coordinates)
             var accommodations = _accommodationService.SearchAccommodations(
                 minRating: minRating,
-                city: null,  // City filtering removed - use geocoding + coordinates instead
                 latitude: latitude,
                 longitude: longitude,
                 maxDistanceKm: maxDistanceKm,

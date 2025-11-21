@@ -257,7 +257,6 @@ public class AccommodationService : IAccommodationService
 
     public List<Accommodation> SearchAccommodations(
         double? minRating = null,
-        string? city = null,
         double? latitude = null,
         double? longitude = null,
         double? maxDistanceKm = 1.0,
@@ -271,12 +270,6 @@ public class AccommodationService : IAccommodationService
         if (minRating.HasValue)
         {
             results = results.Where(a => a.Rating >= minRating.Value);
-        }
-
-        // Filter by city
-        if (!string.IsNullOrWhiteSpace(city))
-        {
-            results = results.Where(a => a.Address.City.Equals(city, StringComparison.OrdinalIgnoreCase));
         }
 
         // Filter by distance from a reference point
