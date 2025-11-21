@@ -97,7 +97,7 @@ User interactions flow through three phases:
 
 ## Storage
 
-**Cosmos DB** stores conversation threads using a composite key pattern (`{agentName}:{conversationId}`):
+**Cosmos DB** stores conversation threads using a composite key pattern (`{agentId}:{conversationId}`):
 
 - Maintains conversation history across requests
 - Enables conversation continuity
