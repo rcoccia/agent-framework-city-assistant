@@ -38,18 +38,33 @@ builder.Services.AddSingleton<CosmosAgentThreadStore>();
 
 // Connect to restaurant agent via A2A
 var restaurantAgentUrl = Environment.GetEnvironmentVariable("services__restaurantagent__https__0") ?? Environment.GetEnvironmentVariable("services__restaurantagent__http__0");
-var httpClient = new HttpClient()
+var restaurantHttpClient = new HttpClient()
 {
     BaseAddress = new Uri(restaurantAgentUrl!),
     Timeout = TimeSpan.FromSeconds(60)
 };
-var cardResolver = new A2ACardResolver(
-    httpClient.BaseAddress!,
-    httpClient,
+var restaurantCardResolver = new A2ACardResolver(
+    restaurantHttpClient.BaseAddress!,
+    restaurantHttpClient,
     agentCardPath: "/agenta2a/v1/card"
 );
 
-var restaurantAgent = cardResolver.GetAIAgentAsync().Result;
+var restaurantAgent = restaurantCardResolver.GetAIAgentAsync().Result;
+
+// Connect to activities agent via A2A
+var activitiesAgentUrl = Environment.GetEnvironmentVariable("services__activitiesagent__https__0") ?? Environment.GetEnvironmentVariable("services__activitiesagent__http__0");
+var activitiesHttpClient = new HttpClient()
+{
+    BaseAddress = new Uri(activitiesAgentUrl!),
+    Timeout = TimeSpan.FromSeconds(60)
+};
+var activitiesCardResolver = new A2ACardResolver(
+    activitiesHttpClient.BaseAddress!,
+    activitiesHttpClient,
+    agentCardPath: "/agenta2a/v1/card"
+);
+
+var activitiesAgent = activitiesCardResolver.GetAIAgentAsync().Result;
 
 // Register the orchestrator agent
 builder.AddAIAgent("orchestrator-agent", (sp, key) =>
@@ -59,12 +74,15 @@ builder.AddAIAgent("orchestrator-agent", (sp, key) =>
     var agent = chatClient.CreateAIAgent(
         instructions: @"You are a helpful city assistant that helps users with various tasks.
 You can help users find restaurants using the restaurant-agent tool.
-When users ask about restaurants, food, dining, or related topics, use the restaurant-agent to get the information.
+You can help users discover activities including museums, theaters, cultural events, and attractions using the activities-agent tool.
+When users ask about restaurants, food, or dining, use the restaurant-agent to get the information.
+When users ask about activities, things to do, museums, theaters, cultural events, or attractions, use the activities-agent to get the information.
 Always be friendly, helpful, and provide comprehensive responses based on the information you receive from the tools.",
         description: "A city assistant that orchestrates multiple specialized agents",
         name: key,
         tools: [
-            restaurantAgent.AsAIFunction()
+            restaurantAgent.AsAIFunction(),
+            activitiesAgent.AsAIFunction()
         ]
     );
 
@@ -94,11 +112,15 @@ app.MapA2A("orchestrator-agent", "/agenta2a", new AgentCard
         new AgentSkill
         {
             Name = "City Assistant",
-            Description = "Help users with city-related tasks including restaurant recommendations",
+            Description = "Help users with city-related tasks including restaurant recommendations and activity planning",
             Examples = [
                 "Find me a good restaurant",
                 "What's the best pizza place in the city?",
-                "Recommend a vegetarian restaurant"
+                "Recommend a vegetarian restaurant",
+                "What museums can I visit?",
+                "Show me theaters in the city",
+                "What cultural events are happening?",
+                "What attractions do you recommend?"
             ]
         }
     ]

@@ -6,6 +6,7 @@
 #:package Aspire.Hosting.Yarp@13.0.0
 
 #:project ../restaurant-agent/RestaurantAgent.csproj
+#:project ../activities-agent/ActivitiesAgent.csproj
 #:project ../orchestrator-agent/OrchestratorAgent.csproj
 
 using Aspire.Hosting.Yarp.Transforms;
@@ -46,11 +47,22 @@ var restaurantAgent = builder.AddProject("restaurantagent", "../restaurant-agent
         e.Urls.Add(new() { Url = "/agenta2a/v1/card", DisplayText = "🤖Restaurant Agent A2A Card", Endpoint = e.GetEndpoint("https") });
     });
 
+var activitiesAgent = builder.AddProject("activitiesagent", "../activities-agent/ActivitiesAgent.csproj")
+    .WithHttpHealthCheck("/health")
+    .WithReference(foundry).WaitFor(foundry)
+    .WithReference(conversations).WaitFor(conversations)
+    .WithEnvironment("AZURE_TENANT_ID", tenantId)
+    .WithUrls((e) =>
+    {
+        e.Urls.Add(new() { Url = "/agenta2a/v1/card", DisplayText = "🎭Activities Agent A2A Card", Endpoint = e.GetEndpoint("https") });
+    });
+
 var orchestratorAgent = builder.AddProject("orchestratoragent", "../orchestrator-agent/OrchestratorAgent.csproj")
     .WithHttpHealthCheck("/health")
     .WithReference(foundry).WaitFor(foundry)
     .WithReference(conversations).WaitFor(conversations)
     .WithReference(restaurantAgent).WaitFor(restaurantAgent)
+    .WithReference(activitiesAgent).WaitFor(activitiesAgent)
     .WithEnvironment("AZURE_TENANT_ID", tenantId)
     .WithUrls((e) =>
     {
