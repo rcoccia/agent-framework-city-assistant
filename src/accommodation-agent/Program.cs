@@ -39,7 +39,7 @@ var transport = new HttpClientTransport(new HttpClientTransportOptions
     Endpoint = mcpEndpoint
 });
 
-var mcpClient = await McpClientFactory.CreateAsync(transport);
+var mcpClient = await McpClient.CreateAsync(transport);
 
 // Retrieve the list of tools available on the MCP geocoding server
 var mcpTools = await mcpClient.ListToolsAsync();
