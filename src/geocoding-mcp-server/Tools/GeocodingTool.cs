@@ -17,9 +17,9 @@ public sealed class GeocodingTool
     private const double RomeCityCenterLatitude = 41.9028;
     private const double RomeCityCenterLongitude = 12.4964;
     
-    // Mock data for known landmarks and cities (all keys normalized to lowercase)
+    // Mock data for known landmarks and cities
     // TODO: Consider externalizing to configuration file or database for easier maintenance
-    private static readonly Dictionary<string, (double Latitude, double Longitude)> KnownLocations = new()
+    private static readonly Dictionary<string, (double Latitude, double Longitude)> KnownLocations = new(StringComparer.OrdinalIgnoreCase)
     {
         // Rome landmarks
         { "colosseum", (41.8902, 12.4922) },
@@ -67,8 +67,7 @@ public sealed class GeocodingTool
             return Task.FromResult(JsonSerializer.Serialize(errorResult));
         }
 
-        // Normalize to lowercase for case-insensitive comparison
-        if (KnownLocations.TryGetValue(location.Trim().ToLowerInvariant(), out var coordinates))
+        if (KnownLocations.TryGetValue(location.Trim(), out var coordinates))
         {
             _logger.LogInformation("Geocoded '{Location}' to coordinates: {Lat}, {Lon}", location, coordinates.Latitude, coordinates.Longitude);
             
