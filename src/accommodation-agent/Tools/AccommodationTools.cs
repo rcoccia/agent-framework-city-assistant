@@ -57,8 +57,6 @@ public class AccommodationTools
         }
     }
 
-    // Note: GeocodeLocationAsync removed - now provided by geocoding MCP server
-
     [Description("Search for accommodations based on various criteria including rating, location, amenities, price, and type")]
     public async Task<string> SearchAccommodationsAsync(
         [Description("The user's original search query to use for reranking results")] string userQuery,

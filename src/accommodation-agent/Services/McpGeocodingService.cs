@@ -20,7 +20,7 @@ public class McpGeocodingService : IGeocodingService
         // Get MCP server URL from Aspire service reference
         _mcpServerUrl = configuration["services__geocodingmcpserver__https__0"] 
             ?? configuration["services__geocodingmcpserver__http__0"]
-            ?? "https://localhost:5199"; // Fallback for local development
+            ?? "https://localhost:7299"; // Fallback for local development (matches launchSettings)
     }
 
     public async Task<(double Latitude, double Longitude)?> GeocodeAsync(string query)
@@ -32,7 +32,7 @@ public class McpGeocodingService : IGeocodingService
 
         try
         {
-            // Call MCP server's geocode_location tool
+            // Call MCP server's geocode_location tool via JSON-RPC
             var request = new
             {
                 jsonrpc = "2.0",
@@ -51,7 +51,8 @@ public class McpGeocodingService : IGeocodingService
                 "application/json"
             );
 
-            var response = await _httpClient.PostAsync($"{_mcpServerUrl}/mcp", jsonContent);
+            // Use the MCP v1 endpoint for tool calls
+            var response = await _httpClient.PostAsync($"{_mcpServerUrl}/mcp/v1/tools/call", jsonContent);
             response.EnsureSuccessStatusCode();
 
             var responseBody = await response.Content.ReadAsStringAsync();
