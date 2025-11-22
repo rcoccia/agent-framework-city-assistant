@@ -16,7 +16,7 @@ var app = builder.Build();
 // Map default endpoints (health checks, metrics, etc.)
 app.MapDefaultEndpoints();
 
-// Map MCP protocol endpoints (/mcp/v1/*)
-app.MapMcp();
+// Map MCP protocol endpoints
+app.MapMcp("/mcp");
 
 app.Run();

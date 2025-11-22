@@ -49,11 +49,7 @@ var restaurantAgent = builder.AddProject("restaurantagent", "../restaurant-agent
     });
 
 var geocodingMcpServer = builder.AddProject("geocodingmcpserver", "../geocoding-mcp-server/GeocodingMcpServer.csproj")
-    .WithHttpHealthCheck("/health")
-    .WithUrls((e) =>
-    {
-        e.Urls.Add(new() { Url = "/mcp", DisplayText = "🗺️Geocoding MCP Server", Endpoint = e.GetEndpoint("https") });
-    });
+    .WithHttpHealthCheck("/health");
 
 var accommodationAgent = builder.AddProject("accommodationagent", "../accommodation-agent/AccommodationAgent.csproj")
     .WithHttpHealthCheck("/health")
