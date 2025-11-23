@@ -96,7 +96,7 @@ The server includes a health check endpoint at `/health` (provided by Aspire ser
 
 ## Dependencies
 
-- ModelContextProtocol.AspNetCore (0.2.0-preview.1)
+- ModelContextProtocol.AspNetCore (0.4.0-preview.3)
 - ServiceDefaults (local project reference for Aspire integration)
 
 ## Future Enhancements
