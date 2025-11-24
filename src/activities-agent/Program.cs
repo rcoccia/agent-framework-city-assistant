@@ -7,6 +7,7 @@ using Microsoft.Extensions.AI;
 using ActivitiesAgent.Services;
 using ActivitiesAgent.Tools;
 using SharedServices;
+using ModelContextProtocol.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +24,28 @@ builder.AddAzureChatCompletionsClient(connectionName: "foundry",
 
 // Register services
 builder.Services.AddSingleton<ActivitiesService>();
+
+// Configure MCP Client for geocoding server
+var geocodingMcpUrl = builder.Configuration["services__geocodingmcpserver__https__0"] 
+    ?? builder.Configuration["services__geocodingmcpserver__http__0"]
+    ?? "https://localhost:7299";
+
+// Append the MCP endpoint path
+var mcpEndpoint = new Uri(new Uri(geocodingMcpUrl), "/mcp");
+
+var transport = new HttpClientTransport(new HttpClientTransportOptions
+{
+    Endpoint = mcpEndpoint
+});
+
+var mcpClient = await McpClient.CreateAsync(transport);
+
+// Retrieve the list of tools available on the MCP geocoding server
+var mcpTools = await mcpClient.ListToolsAsync();
+
+// Register MCP client as a singleton
+builder.Services.AddSingleton(mcpClient);
+
 builder.Services.AddSingleton<ActivitiesTools>();
 
 // Register OpenAI endpoints
@@ -43,13 +66,35 @@ builder.AddAIAgent("activities-agent", (sp, key) =>
 
     var agent = chatClient.CreateAIAgent(
         instructions: @"You are a helpful activities assistant. You help users discover and plan activities during their trip.
-You can search for museums, theaters, cultural events, and attractions.
+
+AVAILABLE TOOLS:
+1. geocode_location (MCP) - Convert addresses, city names, or landmark names to coordinates (latitude, longitude). Location must be in English.
+2. SearchActivitiesAsync - Search for activities using coordinates and other filters
+3. GetAllActivities - Get all available activities
+4. GetActivitiesByCategory - Get activities by category (museums, theaters, cultural_events, attractions)
+
+SEARCH WORKFLOW:
+ALWAYS geocode locations first! When users mention ANY location (city, landmark, or address), you MUST:
+1. Use geocode_location to convert the location to coordinates (pass English location names)
+2. Parse the JSON response to extract latitude and longitude
+3. Then use those coordinates with SearchActivitiesAsync
+
+You can search for activities by:
+- Category (museums, theaters, cultural_events, attractions)
+- Location using coordinates:
+  * ALWAYS use geocode_location first for ANY location (cities like 'Rome' or 'Latina', landmarks like 'Colosseum' or 'Vatican', addresses)
+  * Parse the returned JSON to get latitude and longitude values
+  * Then pass the latitude/longitude to SearchActivitiesAsync
+  * The default search radius is 1 km from the coordinates
+- Keywords in name or description
+
+Multiple criteria can be combined (e.g., 'find me museums near the Colosseum').
+
 Each activity includes detailed information about hours, dates, pricing, restrictions, accessibility, location, and user reviews.
-Always be friendly and provide comprehensive information to help users plan their visit.
-When users ask about activities, use the available tools to retrieve the information.",
+Always be friendly and provide comprehensive information to help users plan their visit.",
         description: "A friendly activities assistant that helps discover museums, theaters, cultural events, and attractions",
         name: key,
-        tools: [.. activitiesTools]
+        tools: [.. activitiesTools, .. mcpTools.Cast<AITool>()]
     );
 
     return agent;

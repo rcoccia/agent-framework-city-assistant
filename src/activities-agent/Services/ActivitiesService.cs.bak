@@ -17,7 +17,6 @@ public class ActivitiesService
                 Category = "museums",
                 Description = "World-renowned art museum featuring masterpieces from the Renaissance to contemporary art, including works by Monet, Van Gogh, and Picasso.",
                 Location = "Downtown Cultural District",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "100 Museum Boulevard, Downtown",
                 Hours = "Tuesday-Sunday: 10:00 AM - 6:00 PM, Closed Mondays",
                 AvailableDates = "Year-round, check website for special exhibitions",
@@ -49,7 +48,6 @@ public class ActivitiesService
                 Category = "museums",
                 Description = "Explore millions of years of natural history with dinosaur fossils, gemstones, and interactive exhibits about the evolution of life on Earth.",
                 Location = "Science Park",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "250 Science Avenue, North Side",
                 Hours = "Monday-Sunday: 9:00 AM - 5:00 PM",
                 AvailableDates = "Open daily except Thanksgiving and Christmas",
@@ -81,7 +79,6 @@ public class ActivitiesService
                 Category = "museums",
                 Description = "Contemporary art space showcasing cutting-edge installations, digital art, and works by emerging artists from around the world.",
                 Location = "Arts District",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "45 Contemporary Lane, Arts District",
                 Hours = "Wednesday-Monday: 11:00 AM - 7:00 PM, Closed Tuesdays",
                 AvailableDates = "Year-round with rotating exhibitions every 3 months",
@@ -112,7 +109,6 @@ public class ActivitiesService
                 Category = "museums",
                 Description = "Journey through local history from indigenous peoples to modern times with artifacts, photographs, and interactive displays.",
                 Location = "Old Town",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "789 Heritage Street, Old Town",
                 Hours = "Tuesday-Saturday: 10:00 AM - 4:00 PM",
                 AvailableDates = "Open year-round, closed major holidays",
@@ -144,7 +140,6 @@ public class ActivitiesService
                 Category = "museums",
                 Description = "Interactive science museum with hands-on exhibits covering robotics, space exploration, physics, and biology. Perfect for curious minds.",
                 Location = "Innovation Quarter",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "300 Discovery Drive, Innovation Quarter",
                 Hours = "Daily: 9:00 AM - 6:00 PM",
                 AvailableDates = "Open every day of the year",
@@ -175,7 +170,6 @@ public class ActivitiesService
                 Category = "museums",
                 Description = "Discover the city's nautical heritage with historic ships, navigation instruments, and tales of maritime adventure.",
                 Location = "Harbor District",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "1 Wharf Street, Harbor District",
                 Hours = "Monday-Friday: 10:00 AM - 5:00 PM, Saturday-Sunday: 9:00 AM - 6:00 PM",
                 AvailableDates = "Open year-round",
@@ -206,7 +200,6 @@ public class ActivitiesService
                 Category = "museums",
                 Description = "Playful learning environment designed for children ages 0-10 with creative play areas, art studios, and STEM activities.",
                 Location = "Family Park",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "500 Playtime Boulevard, West End",
                 Hours = "Monday-Saturday: 9:00 AM - 5:00 PM, Sunday: 12:00 PM - 5:00 PM",
                 AvailableDates = "Open daily except major holidays",
@@ -237,7 +230,6 @@ public class ActivitiesService
                 Category = "museums",
                 Description = "Dedicated to the art of photography from daguerreotypes to digital, featuring works by legendary photographers and emerging talents.",
                 Location = "Cultural Center",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "88 Lens Avenue, Cultural Center",
                 Hours = "Tuesday-Sunday: 11:00 AM - 6:00 PM",
                 AvailableDates = "Rotating exhibitions every 2 months",
@@ -268,7 +260,6 @@ public class ActivitiesService
                 Category = "museums",
                 Description = "Experience the thrill of flight with vintage aircraft, spacecraft, flight simulators, and astronaut artifacts.",
                 Location = "Airport District",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "1000 Runway Road, Airport District",
                 Hours = "Daily: 10:00 AM - 5:00 PM",
                 AvailableDates = "Open year-round",
@@ -300,7 +291,6 @@ public class ActivitiesService
                 Category = "museums",
                 Description = "Celebrating traditional crafts and folk art from diverse cultures, featuring textiles, pottery, woodwork, and traditional costumes.",
                 Location = "Heritage Quarter",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "222 Tradition Lane, Heritage Quarter",
                 Hours = "Wednesday-Sunday: 10:00 AM - 5:00 PM",
                 AvailableDates = "Open most of the year, check for special workshops",
@@ -333,7 +323,6 @@ public class ActivitiesService
                 Category = "theaters",
                 Description = "Historic opera house hosting world-class opera, ballet, and classical music performances in an ornate 19th-century venue.",
                 Location = "Theater District",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "1 Opera Plaza, Theater District",
                 Hours = "Performance times vary, Box Office: Monday-Saturday 10:00 AM - 6:00 PM",
                 AvailableDates = "Season runs September through June",
@@ -365,7 +354,6 @@ public class ActivitiesService
                 Category = "theaters",
                 Description = "Dedicated to producing Shakespeare's plays and contemporary works, featuring both traditional and innovative productions.",
                 Location = "Cultural District",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "42 Bard Street, Cultural District",
                 Hours = "Shows: Tuesday-Sunday evenings, Matinees Saturday-Sunday",
                 AvailableDates = "Year-round programming",
@@ -397,7 +385,6 @@ public class ActivitiesService
                 Category = "theaters",
                 Description = "Intimate comedy venue featuring stand-up comedians from local talent to internationally recognized headliners.",
                 Location = "Entertainment District",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "123 Laugh Lane, Entertainment District",
                 Hours = "Shows: Wednesday-Sunday, Doors open 7:00 PM",
                 AvailableDates = "Shows every week, check schedule online",
@@ -428,7 +415,6 @@ public class ActivitiesService
                 Category = "theaters",
                 Description = "Premier venue for touring Broadway musicals and original productions, featuring elaborate sets and professional casts.",
                 Location = "Theater District",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "5 Show Street, Theater District",
                 Hours = "Varying show times, Box Office: Daily 10:00 AM - 8:00 PM",
                 AvailableDates = "Rotating shows throughout the year",
@@ -460,7 +446,6 @@ public class ActivitiesService
                 Category = "theaters",
                 Description = "Avant-garde theater space showcasing experimental works, immersive performances, and new playwrights.",
                 Location = "Arts District",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "77 Edge Avenue, Arts District",
                 Hours = "Shows: Thursday-Sunday, Times vary by production",
                 AvailableDates = "Multiple productions running simultaneously",
@@ -491,7 +476,6 @@ public class ActivitiesService
                 Category = "theaters",
                 Description = "Theater dedicated to children's productions with interactive shows, fairy tales, and educational performances.",
                 Location = "Family Entertainment Zone",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "200 Storytime Circle, West End",
                 Hours = "Weekend matinees, Summer daily shows",
                 AvailableDates = "Year-round with seasonal specials",
@@ -522,7 +506,6 @@ public class ActivitiesService
                 Category = "theaters",
                 Description = "Spontaneous comedy theater where every show is different, featuring improvisation games and audience suggestions.",
                 Location = "Entertainment District",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "456 Spontaneous Street, Entertainment District",
                 Hours = "Shows: Friday-Saturday 8:00 PM & 10:30 PM",
                 AvailableDates = "Weekly shows year-round",
@@ -553,7 +536,6 @@ public class ActivitiesService
                 Category = "theaters",
                 Description = "Beautifully restored 1920s theater showing classic films, hosting live music, and special cinema events.",
                 Location = "Downtown Historic District",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "33 Vintage Boulevard, Downtown",
                 Hours = "Showtimes vary, generally 7:00 PM & 9:30 PM",
                 AvailableDates = "Open year-round with themed film festivals",
@@ -584,7 +566,6 @@ public class ActivitiesService
                 Category = "theaters",
                 Description = "Intimate 99-seat theater specializing in contemporary plays, solo performances, and workshops.",
                 Location = "Arts Quarter",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "11 Performance Place, Arts Quarter",
                 Hours = "Shows: Thursday-Sunday, 8:00 PM",
                 AvailableDates = "Programming changes monthly",
@@ -614,7 +595,6 @@ public class ActivitiesService
                 Category = "theaters",
                 Description = "Open-air venue for concerts, Shakespeare under the stars, and summer movie nights with stunning city views.",
                 Location = "Hillside Park",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "1 Scenic Vista Drive, Hillside Park",
                 Hours = "Seasonal: May-September, Times vary by event",
                 AvailableDates = "Summer season only",
@@ -647,7 +627,6 @@ public class ActivitiesService
                 Category = "cultural_events",
                 Description = "Three-day celebration featuring local chefs, international cuisine, wine tastings, and cooking demonstrations.",
                 Location = "Waterfront Park",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "100 Harbor View, Waterfront",
                 Hours = "Friday-Sunday: 11:00 AM - 10:00 PM",
                 AvailableDates = "First weekend of October",
@@ -678,7 +657,6 @@ public class ActivitiesService
                 Category = "cultural_events",
                 Description = "Ten-day festival showcasing independent films, documentaries, and world cinema with Q&As and panel discussions.",
                 Location = "Multiple Theaters Downtown",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "Various Locations, Festival Hub at 50 Cinema Square",
                 Hours = "Screenings throughout the day, 10:00 AM - 11:00 PM",
                 AvailableDates = "Mid-November, 10 days",
@@ -709,7 +687,6 @@ public class ActivitiesService
                 Category = "cultural_events",
                 Description = "Annual celebration of urban art with live mural painting, graffiti workshops, street performances, and art markets.",
                 Location = "Arts District",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "Entire Arts District neighborhood",
                 Hours = "Saturday-Sunday: 10:00 AM - 8:00 PM",
                 AvailableDates = "Last weekend of May",
@@ -739,7 +716,6 @@ public class ActivitiesService
                 Category = "cultural_events",
                 Description = "Four-day music festival featuring legendary jazz musicians, emerging blues artists, and late-night jam sessions.",
                 Location = "Riverside Park",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "75 River Road, Riverside Park",
                 Hours = "Thursday-Sunday: 2:00 PM - 11:00 PM",
                 AvailableDates = "Third weekend in July",
@@ -770,7 +746,6 @@ public class ActivitiesService
                 Category = "cultural_events",
                 Description = "Colorful parade celebrating the city's diverse communities with traditional costumes, music, dance, and cultural displays.",
                 Location = "Main Street to City Hall",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "Parade route starts at 1st & Main Street",
                 Hours = "Saturday: 10:00 AM - 3:00 PM",
                 AvailableDates = "Second Saturday in June",
@@ -800,7 +775,6 @@ public class ActivitiesService
                 Category = "cultural_events",
                 Description = "Magical light installations and projections throughout the city during the winter season, featuring local and international artists.",
                 Location = "City-wide",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "Multiple locations, maps available at Visitor Center",
                 Hours = "Daily: 5:00 PM - 11:00 PM",
                 AvailableDates = "December 1 - January 15",
@@ -830,7 +804,6 @@ public class ActivitiesService
                 Category = "cultural_events",
                 Description = "Three-day festival celebrating literature with author readings, book signings, writing workshops, and independent publishers.",
                 Location = "Convention Center",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "500 Convention Plaza, Downtown",
                 Hours = "Friday: 4:00 PM - 9:00 PM, Saturday-Sunday: 10:00 AM - 6:00 PM",
                 AvailableDates = "First weekend in April",
@@ -861,7 +834,6 @@ public class ActivitiesService
                 Category = "cultural_events",
                 Description = "Summer-long outdoor exhibition featuring large-scale sculptures by renowned artists placed throughout city parks.",
                 Location = "Multiple Parks",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "See exhibition map at Tourism Office",
                 Hours = "Dawn to dusk, self-guided",
                 AvailableDates = "June 1 - September 30",
@@ -891,7 +863,6 @@ public class ActivitiesService
                 Category = "cultural_events",
                 Description = "Weekend celebration of traditional music and dance from around the world with performances, workshops, and participatory dancing.",
                 Location = "Heritage Village",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "100 Tradition Way, Heritage Village",
                 Hours = "Saturday-Sunday: 11:00 AM - 10:00 PM",
                 AvailableDates = "First weekend in September",
@@ -922,7 +893,6 @@ public class ActivitiesService
                 Category = "cultural_events",
                 Description = "Interactive expo showcasing latest innovations, robotics competitions, VR experiences, and talks by tech leaders.",
                 Location = "Convention Center",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "500 Convention Plaza, Downtown",
                 Hours = "Friday-Sunday: 9:00 AM - 7:00 PM",
                 AvailableDates = "Last weekend in March",
@@ -955,7 +925,6 @@ public class ActivitiesService
                 Category = "attractions",
                 Description = "360-degree views from the tallest building in the city. Features glass floor viewing platform, interactive exhibits, and sunset viewing lounge.",
                 Location = "Downtown Financial District",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "1 Skyline Plaza, Floor 75, Downtown",
                 Hours = "Daily: 9:00 AM - 11:00 PM (last entry 10:30 PM)",
                 AvailableDates = "Open year-round",
@@ -987,7 +956,6 @@ public class ActivitiesService
                 Category = "attractions",
                 Description = "50-acre garden featuring themed sections including Japanese garden, rose garden, tropical conservatory, and butterfly pavilion.",
                 Location = "Garden District",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "1000 Garden Way, Garden District",
                 Hours = "Daily: 9:00 AM - 5:00 PM (until 8:00 PM in summer)",
                 AvailableDates = "Open year-round, special seasonal displays",
@@ -1019,7 +987,6 @@ public class ActivitiesService
                 Category = "attractions",
                 Description = "Guided 2-hour walking tour through historic downtown, covering architecture, local legends, and important historical sites.",
                 Location = "Starts at City Hall",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "City Hall Plaza, 1 Civic Center",
                 Hours = "Tours daily at 10:00 AM, 2:00 PM, and 6:00 PM",
                 AvailableDates = "Year-round, weather permitting",
@@ -1050,7 +1017,6 @@ public class ActivitiesService
                 Category = "attractions",
                 Description = "World-class zoo and aquarium featuring over 3,000 animals, interactive exhibits, feeding experiences, and conservation programs.",
                 Location = "North Park",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "2000 Wildlife Drive, North Park",
                 Hours = "Daily: 9:00 AM - 6:00 PM (until 8:00 PM in summer)",
                 AvailableDates = "Open year-round except Christmas Day",
@@ -1082,7 +1048,6 @@ public class ActivitiesService
                 Category = "attractions",
                 Description = "Scenic harbor cruises offering city skyline views, historical commentary, and sunset dinner cruises available.",
                 Location = "Ferry Terminal",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "10 Pier Street, Harbor District",
                 Hours = "Departures every hour, 10:00 AM - 8:00 PM",
                 AvailableDates = "April through October, weather permitting",
@@ -1113,7 +1078,6 @@ public class ActivitiesService
                 Category = "attractions",
                 Description = "Thrilling amusement park with roller coasters, family rides, water attractions, and live entertainment shows.",
                 Location = "Entertainment Zone",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "3000 Thrill Road, East Side",
                 Hours = "Daily: 10:00 AM - 10:00 PM (seasonal hours vary)",
                 AvailableDates = "March through October, weekends in November",
@@ -1145,7 +1109,6 @@ public class ActivitiesService
                 Category = "attractions",
                 Description = "Vibrant public market operating since 1895, featuring local produce, artisan foods, restaurants, and cultural performances.",
                 Location = "Market District",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "400 Market Street, Market District",
                 Hours = "Monday-Saturday: 7:00 AM - 9:00 PM, Sunday: 9:00 AM - 6:00 PM",
                 AvailableDates = "Open year-round",
@@ -1175,7 +1138,6 @@ public class ActivitiesService
                 Category = "attractions",
                 Description = "Sandy beach with 2-mile boardwalk, beach volleyball, bike rentals, arcades, and oceanfront dining.",
                 Location = "Coastal District",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "1 Beachfront Boulevard, Coastal District",
                 Hours = "Beach: 6:00 AM - 10:00 PM, Boardwalk shops vary",
                 AvailableDates = "Open year-round, lifeguards on duty Memorial Day - Labor Day",
@@ -1206,7 +1168,6 @@ public class ActivitiesService
                 Category = "attractions",
                 Description = "Historic cable car system offering scenic transportation through the city's hills with stunning views and historic landmarks.",
                 Location = "Multiple Routes",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "Stations throughout downtown, main hub at Union Square",
                 Hours = "Daily: 6:00 AM - 11:00 PM",
                 AvailableDates = "Year-round service",
@@ -1237,7 +1198,6 @@ public class ActivitiesService
                 Category = "attractions",
                 Description = "State-of-the-art planetarium with immersive shows about space, astronomy workshops, and telescope viewing on clear nights.",
                 Location = "Science Park",
-                Position = new Position { Latitude = 41.9028, Longitude = 12.4964 },
                 Address = "800 Star Drive, Science Park",
                 Hours = "Tuesday-Sunday: 10:00 AM - 9:00 PM, Night viewing: 8:00 PM - 11:00 PM",
                 AvailableDates = "Open year-round, telescope viewing weather dependent",
@@ -1277,67 +1237,14 @@ public class ActivitiesService
         return _activities.Where(a => a.Category.ToLowerInvariant() == normalizedCategory).ToList();
     }
 
-    public List<Activity> SearchActivities(
-        string? category = null,
-        double? latitude = null,
-        double? longitude = null,
-        double? maxDistanceKm = 1.0,
-        string? keywords = null)
+    public List<Activity> SearchActivities(string query)
     {
-        var query = _activities.AsEnumerable();
-
-        // Filter by category if provided
-        if (!string.IsNullOrEmpty(category))
-        {
-            var normalizedCategory = category.ToLowerInvariant();
-            query = query.Where(a => a.Category.ToLowerInvariant() == normalizedCategory);
-        }
-
-        // Filter by location proximity if coordinates provided
-        if (latitude.HasValue && longitude.HasValue)
-        {
-            query = query.Where(a =>
-            {
-                var distance = CalculateDistance(
-                    latitude.Value,
-                    longitude.Value,
-                    a.Position.Latitude,
-                    a.Position.Longitude);
-                return distance <= (maxDistanceKm ?? 1.0);
-            });
-        }
-
-        // Filter by keywords if provided
-        if (!string.IsNullOrEmpty(keywords))
-        {
-            var normalizedKeywords = keywords.ToLowerInvariant();
-            query = query.Where(a =>
-                a.Name.ToLowerInvariant().Contains(normalizedKeywords) ||
-                a.Description.ToLowerInvariant().Contains(normalizedKeywords) ||
-                a.Location.ToLowerInvariant().Contains(normalizedKeywords));
-        }
-
-        return query.ToList();
-    }
-
-    private static double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
-    {
-        // Haversine formula to calculate distance between two points on Earth
-        const double R = 6371; // Earth's radius in kilometers
-
-        var dLat = ToRadians(lat2 - lat1);
-        var dLon = ToRadians(lon2 - lon1);
-
-        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
-                Math.Cos(ToRadians(lat1)) * Math.Cos(ToRadians(lat2)) *
-                Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
-
-        var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-        return R * c;
-    }
-
-    private static double ToRadians(double degrees)
-    {
-        return degrees * Math.PI / 180.0;
+        var normalizedQuery = query.ToLowerInvariant();
+        return _activities.Where(a =>
+            a.Name.ToLowerInvariant().Contains(normalizedQuery) ||
+            a.Category.ToLowerInvariant().Contains(normalizedQuery) ||
+            a.Description.ToLowerInvariant().Contains(normalizedQuery) ||
+            a.Location.ToLowerInvariant().Contains(normalizedQuery)
+        ).ToList();
     }
 }
