@@ -108,23 +108,44 @@ This server currently uses mock data. Future versions could integrate with real 
 
 ## Integration Example
 
-To use this MCP server from an AI agent:
+To integrate this MCP server with a Microsoft Agent Framework AI agent:
 
 ```csharp
-// Connect to the MCP server
-var mcpClient = await McpClient.CreateAsync(httpTransport);
+// Configure MCP Client for geocoding server
+var geocodingMcpUrl = builder.Configuration["services__geocodingmcpserver__https__0"] 
+    ?? builder.Configuration["services__geocodingmcpserver__http__0"]
+    ?? "https://localhost:7299";
 
-// Call the geocoding tool
-var result = await mcpClient.CallToolAsync(
-    "geocode_location",
-    new Dictionary<string, object?> { ["location"] = "Colosseum" },
-    cancellationToken: CancellationToken.None
-);
+var mcpEndpoint = new Uri(new Uri(geocodingMcpUrl), "/mcp");
 
-// Parse the result
-var content = result.Content.OfType<TextContentBlock>().First().Text;
-var geocodeResult = JsonSerializer.Deserialize<GeocodeResult>(content);
+var transport = new HttpClientTransport(new HttpClientTransportOptions
+{
+    Endpoint = mcpEndpoint
+});
+
+var mcpClient = await McpClient.CreateAsync(transport);
+
+// Retrieve the list of tools available on the MCP geocoding server
+var mcpTools = await mcpClient.ListToolsAsync();
+
+// Register the AI agent with both local tools and MCP tools
+builder.AddAIAgent("my-agent", (sp, key) =>
+{
+    var chatClient = sp.GetRequiredService<IChatClient>();
+    var localTools = sp.GetRequiredService<MyTools>().GetFunctions();
+
+    var agent = chatClient.CreateAIAgent(
+        instructions: "Your agent instructions here...",
+        description: "Your agent description",
+        name: key,
+        tools: [.. localTools, .. mcpTools.Cast<AITool>()]  // Combine local and MCP tools
+    );
+
+    return agent;
+});
 ```
+
+The AI agent can now use the `geocode_location` tool automatically as part of its available tools.
 
 ## License
 
