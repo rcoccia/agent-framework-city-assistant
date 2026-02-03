@@ -32,24 +32,22 @@ builder.AddAzureChatCompletionsClient(connectionName: "foundry",
     })
     .AddChatClient("gpt-4.1");
 
-// Register Cosmos for conversation storage
-//builder.AddAzureCosmosClient(connectionName: "sessions",
-//    configureSettings: settings =>
-//    {
-//        settings.Credential = new DefaultAzureCredential();
-//    },
-//    configureClientOptions: options =>
-//    {
-//    });
-
+// Register Cosmos containers for session and conversation storage
 builder.AddKeyedAzureCosmosContainer("sessions",
     configureClientOptions: (option) => 
     {
         option.Serializer = new CosmosSystemTextJsonSerializer();
     });
 
-builder.Services.AddSingleton<ISessionRepository, CosmosSessionRepository>();
-builder.Services.AddSingleton<SharedServices.AgentSessionStore>();
+builder.AddKeyedAzureCosmosContainer("conversations", 
+    configureClientOptions: (option) =>
+    {
+        option.Serializer = new CosmosSystemTextJsonSerializer();
+    });
+
+// Register session and chat history providers using keyed containers
+builder.Services.AddCosmosAgentSessionStore("sessions");
+builder.Services.AddCosmosChatHistoryProvider("conversations");
 
 // Connect to restaurant agent via A2A
 var restaurantAgentUrl = Environment.GetEnvironmentVariable("services__restaurantagent__https__0") ?? Environment.GetEnvironmentVariable("services__restaurantagent__http__0");
@@ -127,14 +125,13 @@ Always be friendly, helpful, and provide comprehensive responses based on the in
         ]
         },
 
-    }.WithCosmosDBChatHistoryProviderUsingManagedIdentity("https://msagthack-cosmos-ct5tmj7sfizgk.documents.azure.com:443/", "Conversation", "conversation", new DefaultAzureCredential())
-    ;
+    }.WithCosmosChatHistoryProvider(sp);
 
     var agent = chatClient.AsAIAgent(agentOptions, services: sp);
 
 
     return agent;
-}).WithSessionStore((sp, key) => sp.GetRequiredService<SharedServices.AgentSessionStore>());
+}).WithCosmosSessionStore();
 
 
 
