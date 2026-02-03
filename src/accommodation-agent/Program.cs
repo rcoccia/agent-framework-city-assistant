@@ -6,7 +6,7 @@ using Microsoft.Agents.AI.Hosting.A2A;
 using Microsoft.Extensions.AI;
 using AccommodationAgent.Services;
 using AccommodationAgent.Tools;
-using SharedServices;
+//using SharedServices;
 using ModelContextProtocol.Client;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -54,10 +54,10 @@ builder.Services.AddOpenAIResponses();
 builder.Services.AddOpenAIConversations();
 
 // Register Cosmos for conversation storage
-builder.AddKeyedAzureCosmosContainer("conversations",
-    configureClientOptions: (option) => option.Serializer = new CosmosSystemTextJsonSerializer());
-builder.Services.AddSingleton<ICosmosThreadRepository, CosmosThreadRepository>();
-builder.Services.AddSingleton<CosmosAgentThreadStore>();
+//builder.AddKeyedAzureCosmosContainer("conversations",
+//    configureClientOptions: (option) => option.Serializer = new CosmosSystemTextJsonSerializer());
+//builder.Services.AddSingleton<ICosmosThreadRepository, CosmosThreadRepository>();
+//builder.Services.AddSingleton<CosmosAgentThreadStore>();
 
 // Register the accommodation agent
 builder.AddAIAgent("accommodation-agent", (sp, key) =>
@@ -65,7 +65,7 @@ builder.AddAIAgent("accommodation-agent", (sp, key) =>
     var chatClient = sp.GetRequiredService<IChatClient>();
     var accommodationTools = sp.GetRequiredService<AccommodationTools>().GetFunctions();
 
-    var agent = chatClient.CreateAIAgent(
+    var agent = chatClient.AsAIAgent(
         instructions: @"You are a helpful accommodation assistant. You help users find accommodations (hotels, B&Bs, hostels) based on their preferences.
 
 AVAILABLE TOOLS:
@@ -100,7 +100,7 @@ The search results are automatically reranked using AI to show only the most rel
     );
 
     return agent;
-}).WithThreadStore((sp, key) => sp.GetRequiredService<CosmosAgentThreadStore>());
+});//.WithThreadStore((sp, key) => sp.GetRequiredService<CosmosAgentThreadStore>());
 
 var app = builder.Build();
 

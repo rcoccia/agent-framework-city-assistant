@@ -6,7 +6,7 @@ using Microsoft.Agents.AI.Hosting.A2A;
 using Microsoft.Extensions.AI;
 using RestaurantAgent.Services;
 using RestaurantAgent.Tools;
-using SharedServices;
+//using SharedServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,10 +30,10 @@ builder.Services.AddOpenAIResponses();
 builder.Services.AddOpenAIConversations();
 
 // Register Cosmos for conversation storage
-builder.AddKeyedAzureCosmosContainer("conversations",
-    configureClientOptions: (option) => option.Serializer = new CosmosSystemTextJsonSerializer());
-builder.Services.AddSingleton<ICosmosThreadRepository, CosmosThreadRepository>();
-builder.Services.AddSingleton<CosmosAgentThreadStore>();
+//builder.AddKeyedAzureCosmosContainer("conversations",
+//    configureClientOptions: (option) => option.Serializer = new CosmosSystemTextJsonSerializer());
+//builder.Services.AddSingleton<ICosmosThreadRepository, CosmosThreadRepository>();
+//builder.Services.AddSingleton<CosmosAgentThreadStore>();
 
 // Register the restaurant agent
 builder.AddAIAgent("restaurant-agent", (sp, key) =>
@@ -41,7 +41,7 @@ builder.AddAIAgent("restaurant-agent", (sp, key) =>
     var chatClient = sp.GetRequiredService<IChatClient>();
     var restaurantTools = sp.GetRequiredService<RestaurantTools>().GetFunctions();
 
-    var agent = chatClient.CreateAIAgent(
+    var agent = chatClient.AsAIAgent(
         instructions: @"You are a helpful restaurant assistant. You help users find restaurants based on their preferences.
 You can search for restaurants by category (vegetarian, pizza, japanese, mexican, french, indian, steakhouse) or by keywords.
 Always be friendly and provide detailed information about the restaurants including their name, address, phone, description, rating, and price range.
@@ -52,7 +52,7 @@ When users ask about restaurants, use the available tools to retrieve the inform
     );
 
     return agent;
-}).WithThreadStore((sp, key) => sp.GetRequiredService<CosmosAgentThreadStore>());
+});//.WithThreadStore((sp, key) => sp.GetRequiredService<CosmosAgentThreadStore>());
 
 var app = builder.Build();
 
