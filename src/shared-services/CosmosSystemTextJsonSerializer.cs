@@ -7,15 +7,20 @@ namespace SharedServices;
 
 public class CosmosSystemTextJsonSerializer : CosmosSerializer
 {
-    private readonly JsonSerializerOptions _options;
+    private readonly JsonSerializerOptions? _options;
 
-    public CosmosSystemTextJsonSerializer()
+//    private static JsonSerializerOptions CreateDefaultJsonOptions()
+//    {
+//        var options = new JsonSerializerOptions();
+//#if NET9_0_OR_GREATER
+//        options.TypeInfoResolver = new System.Text.Json.Serialization.Metadata.DefaultJsonTypeInfoResolver();
+//#endif
+//        return options;
+//    }
+
+    public CosmosSystemTextJsonSerializer(JsonSerializerOptions? options = null)
     {
-        _options = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
-        };
+        _options = options;// ?? CreateDefaultJsonOptions();
     }
 
     public override T FromStream<T>(Stream stream)
@@ -37,3 +42,4 @@ public class CosmosSystemTextJsonSerializer : CosmosSerializer
         return new MemoryStream(Encoding.UTF8.GetBytes(json));
     }
 }
+

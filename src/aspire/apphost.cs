@@ -36,13 +36,14 @@ var cosmos = builder.AddAzureCosmosDB("cosmos-db")
             emulator.WithDataExplorer();
             emulator.WithLifetime(ContainerLifetime.Persistent);
         });
+        
 var db = cosmos.AddCosmosDatabase("db");
-var conversations = db.AddContainer("conversations", "/conversationId");
+var sessions = db.AddContainer("sessions", "/conversationId");
 
 var restaurantAgent = builder.AddProject("restaurantagent", "../restaurant-agent/RestaurantAgent.csproj")
     .WithHttpHealthCheck("/health")
     .WithReference(foundry).WaitFor(foundry)
-    .WithReference(conversations).WaitFor(conversations)
+    .WithReference(sessions).WaitFor(sessions)
     .WithEnvironment("AZURE_TENANT_ID", tenantId)
     .WithUrls((e) =>
     {
@@ -55,7 +56,7 @@ var geocodingMcpServer = builder.AddProject("geocodingmcpserver", "../geocoding-
 var activitiesAgent = builder.AddProject("activitiesagent", "../activities-agent/ActivitiesAgent.csproj")
     .WithHttpHealthCheck("/health")
     .WithReference(foundry).WaitFor(foundry)
-    .WithReference(conversations).WaitFor(conversations)
+    .WithReference(sessions).WaitFor(sessions)
     .WithReference(geocodingMcpServer).WaitFor(geocodingMcpServer)
     .WithEnvironment("AZURE_TENANT_ID", tenantId)
     .WithUrls((e) =>
@@ -66,7 +67,7 @@ var activitiesAgent = builder.AddProject("activitiesagent", "../activities-agent
 var accommodationAgent = builder.AddProject("accommodationagent", "../accommodation-agent/AccommodationAgent.csproj")
     .WithHttpHealthCheck("/health")
     .WithReference(foundry).WaitFor(foundry)
-    .WithReference(conversations).WaitFor(conversations)
+    .WithReference(sessions).WaitFor(sessions)
     .WithReference(geocodingMcpServer).WaitFor(geocodingMcpServer)
     .WithEnvironment("AZURE_TENANT_ID", tenantId)
     .WithUrls((e) =>
@@ -77,7 +78,7 @@ var accommodationAgent = builder.AddProject("accommodationagent", "../accommodat
 var orchestratorAgent = builder.AddProject("orchestratoragent", "../orchestrator-agent/OrchestratorAgent.csproj")
     .WithHttpHealthCheck("/health")
     .WithReference(foundry).WaitFor(foundry)
-    .WithReference(conversations).WaitFor(conversations)
+    .WithReference(sessions).WaitFor(sessions)
     .WithReference(restaurantAgent).WaitFor(restaurantAgent)
     .WithReference(activitiesAgent).WaitFor(activitiesAgent)
     .WithReference(accommodationAgent).WaitFor(accommodationAgent)
