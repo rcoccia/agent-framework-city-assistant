@@ -1,9 +1,11 @@
-using System.Text.Json;
 using Azure.Core;
 using Microsoft.Agents.AI;
 using Microsoft.Azure.Cosmos;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
+using static Microsoft.Agents.AI.InMemoryChatHistoryProvider;
 
 namespace SharedServices;
 
@@ -112,13 +114,15 @@ public static class CosmosChatHistoryProviderExtensions
     /// </summary>
     /// <param name="options">The agent options to configure.</param>
     /// <param name="serviceProvider">The service provider to resolve the container from.</param>
+    /// <param name="configure">Optional configuration action to override or extend pre-registered options.</param>
     /// <returns>The configured options for method chaining.</returns>
     /// <remarks>
     /// Requires prior registration via <see cref="AddCosmosChatHistoryProvider(IServiceCollection, string, Action{CosmosChatHistoryProviderOptions}?)"/>.
     /// </remarks>
     public static ChatClientAgentOptions WithCosmosChatHistoryProvider(
         this ChatClientAgentOptions options,
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider,
+        Action<CosmosChatHistoryProviderOptions>? configure = null)
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(serviceProvider);
@@ -129,6 +133,10 @@ public static class CosmosChatHistoryProviderExtensions
         var container = registration.Container 
             ?? serviceProvider.GetRequiredKeyedService<Container>(registration.ContainerServiceKey);
 
+        // Clone options from registration and apply additional configuration
+        var providerOptions = CloneOptions(registration.Options);
+        configure?.Invoke(providerOptions);
+
         options.ChatHistoryProviderFactory = (context, _) =>
         {
             var provider = CreateProvider(
@@ -136,7 +144,7 @@ public static class CosmosChatHistoryProviderExtensions
                 container.Database.Id,
                 container.Id,
                 context,
-                registration.Options,
+                providerOptions,
                 logger);
             return new ValueTask<ChatHistoryProvider>(provider);
         };
@@ -240,6 +248,20 @@ public static class CosmosChatHistoryProviderExtensions
 
     #region Private Helpers
 
+    private static CosmosChatHistoryProviderOptions CloneOptions(CosmosChatHistoryProviderOptions source)
+    {
+        return new CosmosChatHistoryProviderOptions
+        {
+            MessageTtlSeconds = source.MessageTtlSeconds,
+            MaxMessagesToRetrieve = source.MaxMessagesToRetrieve,
+            MaxItemCount = source.MaxItemCount,
+            MaxBatchSize = source.MaxBatchSize,
+            ChatReducer = source.ChatReducer,
+            ReducerTriggerEvent = source.ReducerTriggerEvent,
+            ReductionStrategy = source.ReductionStrategy
+        };
+    }
+
     private static CosmosChatHistoryProvider CreateProvider(
         CosmosClient client,
         string databaseId,
@@ -248,16 +270,36 @@ public static class CosmosChatHistoryProviderExtensions
         CosmosChatHistoryProviderOptions options,
         ILogger<CosmosChatHistoryProvider>? logger = null)
     {
-        var provider = context.SerializedState.ValueKind == JsonValueKind.Object
-            ? CosmosChatHistoryProvider.CreateFromSerializedState(
+        CosmosChatHistoryProvider provider;
+        if (context.SerializedState.ValueKind == JsonValueKind.Object)
+        {
+            provider = CosmosChatHistoryProvider.CreateFromSerializedState(
                 client,
                 context.SerializedState,
                 databaseId,
                 containerId,
                 context.JsonSerializerOptions,
-                logger)
-            : new CosmosChatHistoryProvider(client, databaseId, containerId, logger);
+                options.ChatReducer,
+                options.ReducerTriggerEvent ?? default,
+                options.ReductionStrategy ?? default,
+                logger);
 
+        }
+        else
+        {
+            provider = new CosmosChatHistoryProvider(
+                client,
+                databaseId,
+                containerId,
+                logger)
+            {
+                ChatReducer = options.ChatReducer,
+                ReducerTriggerEvent = options.ReducerTriggerEvent ?? default,
+                ReductionStrategy = options.ReductionStrategy ?? default
+            };
+        }
+
+        // Set other properties as before
         if (options.MessageTtlSeconds.HasValue)
             provider.MessageTtlSeconds = options.MessageTtlSeconds;
 
@@ -334,4 +376,23 @@ public sealed class CosmosChatHistoryProviderOptions
     /// Ignored when connected to the Cosmos DB Emulator.
     /// </summary>
     public int? MaxBatchSize { get; set; }
+
+    /// <summary>
+    /// Gets the chat reducer used to process or reduce chat messages. If null, no reduction logic will be applied.
+    /// </summary>
+#pragma warning disable MEAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+    public IChatReducer? ChatReducer { get; set; }
+#pragma warning restore MEAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+
+    /// <summary>
+    /// Gets the event that triggers the reducer invocation in this provider.
+    /// </summary>
+    public ChatReducerTriggerEvent? ReducerTriggerEvent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the strategy to use when reducing chat history.
+    /// Default is <see cref="ChatHistoryReductionStrategy.Clear"/> which deletes old messages.
+    /// Use <see cref="ChatHistoryReductionStrategy.Archive"/> to preserve original messages with an archived suffix.
+    /// </summary>
+    public ChatHistoryReductionStrategy? ReductionStrategy { get; set; }
 }
