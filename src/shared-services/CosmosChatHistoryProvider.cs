@@ -1,15 +1,33 @@
-using System.Diagnostics.CodeAnalysis;
-using System.Net;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Azure.Core;
 using Microsoft.Agents.AI;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
+using static Microsoft.Agents.AI.InMemoryChatHistoryProvider;
 
 namespace SharedServices;
+
+/// <summary>
+/// Specifies the strategy to use when reducing chat history.
+/// </summary>
+public enum ChatHistoryReductionStrategy
+{
+    /// <summary>
+    /// Clears the existing messages and replaces them with the reduced set.
+    /// This is the most storage-efficient option but loses the original history.
+    /// </summary>
+    Clear,
+
+    /// <summary>
+    /// Archives the existing messages by renaming their conversationId with an "_archived_{timestamp}" suffix,
+    /// then stores the reduced messages with the original conversationId.
+    /// This preserves the original history for audit/recovery purposes.
+    /// </summary>
+    Archive
+}
 
 /// <summary>
 /// Provides a Cosmos DB implementation of the <see cref="ChatHistoryProvider"/> abstract class.
@@ -21,7 +39,7 @@ namespace SharedServices;
 public sealed class CosmosChatHistoryProvider : ChatHistoryProvider, IDisposable
 {
     private readonly CosmosClient _cosmosClient;
-    private readonly Container _container;
+    private readonly CosmosChatMessageRepository _repository;
     private readonly bool _ownsClient;
     private readonly ILogger _logger;
     private bool _disposed;
@@ -99,21 +117,36 @@ public sealed class CosmosChatHistoryProvider : ChatHistoryProvider, IDisposable
     /// </summary>
     public bool IsEmulator => _isEmulator;
 
+
+    /// <summary>
+    /// Gets the chat reducer used to process or reduce chat messages. If null, no reduction logic will be applied.
+    /// </summary>
+#pragma warning disable MEAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+    public IChatReducer? ChatReducer { get; init; } = null;
+#pragma warning restore MEAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+
+    /// <summary>
+    /// Gets the event that triggers the reducer invocation in this provider.
+    /// </summary>
+    public ChatReducerTriggerEvent ReducerTriggerEvent { get; init; } = ChatReducerTriggerEvent.BeforeMessagesRetrieval;
+
+    /// <summary>
+    /// Gets the strategy to use when reducing chat history.
+    /// Default is <see cref="ChatHistoryReductionStrategy.Clear"/> which deletes old messages.
+    /// Use <see cref="ChatHistoryReductionStrategy.Archive"/> to preserve original messages with an archived suffix.
+    /// </summary>
+    public ChatHistoryReductionStrategy ReductionStrategy { get; init; } = ChatHistoryReductionStrategy.Clear;
+
     /// <summary>
     /// Determines if the given CosmosClient is connected to the local emulator.
     /// </summary>
     /// <param name="cosmosClient">The CosmosClient to check.</param>
     /// <returns>True if connected to the emulator, false otherwise.</returns>
-    private static bool DetectEmulator(CosmosClient cosmosClient)
-    {
-        var host = cosmosClient.Endpoint?.Host;
-        if (string.IsNullOrEmpty(host)) return false;
-
-        // Emulator typically runs on localhost, 127.x.x.x, or host.docker.internal
-        return host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
-            || host.StartsWith("127.", StringComparison.OrdinalIgnoreCase)
-            || host.Equals("host.docker.internal", StringComparison.OrdinalIgnoreCase);
-    }
+    private static bool DetectEmulator(CosmosClient cosmosClient) =>
+        cosmosClient.Endpoint?.Host is { } host &&
+        (host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+         host.StartsWith("127.", StringComparison.OrdinalIgnoreCase) ||
+         host.Equals("host.docker.internal", StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
     /// Internal primary constructor used by all public constructors.
@@ -134,13 +167,16 @@ public sealed class CosmosChatHistoryProvider : ChatHistoryProvider, IDisposable
         ArgumentNullException.ThrowIfNullOrWhiteSpace(conversationId);
 
         _cosmosClient = cosmosClient;
-        _container = cosmosClient.GetContainer(databaseId, containerId);
         _ownsClient = ownsClient;
         _isEmulator = DetectEmulator(cosmosClient);
         _tenantId = tenantId;
         _userId = userId;
         _useHierarchicalPartitioning = tenantId is not null && userId is not null;
         _logger = logger ?? NullLogger<CosmosChatHistoryProvider>.Instance;
+
+        // Initialize repository
+        var container = cosmosClient.GetContainer(databaseId, containerId);
+        _repository = new CosmosChatMessageRepository(container, _isEmulator, _logger);
 
         ConversationId = conversationId;
         DatabaseId = databaseId;
@@ -294,17 +330,33 @@ public sealed class CosmosChatHistoryProvider : ChatHistoryProvider, IDisposable
 
     /// <summary>
     /// Creates a new instance of the <see cref="CosmosChatHistoryProvider"/> class from previously serialized state.
+    /// This factory method is used to restore a provider instance from state that was previously saved via <see cref="Serialize"/>.
     /// </summary>
     /// <param name="cosmosClient">The <see cref="CosmosClient"/> instance to use for Cosmos DB operations.</param>
-    /// <param name="serializedState">A <see cref="JsonElement"/> representing the serialized state of the provider.</param>
+    /// <param name="serializedState">A <see cref="JsonElement"/> representing the serialized state of the provider, 
+    /// typically obtained from a previous call to <see cref="Serialize"/>.</param>
     /// <param name="databaseId">The identifier of the Cosmos DB database.</param>
     /// <param name="containerId">The identifier of the Cosmos DB container.</param>
     /// <param name="jsonSerializerOptions">Optional settings for customizing the JSON deserialization process.</param>
+    /// <param name="reducer">Optional chat reducer to process or reduce chat messages before retrieval. 
+    /// If null, no reduction logic will be applied.</param>
+    /// <param name="reducerTriggerEvent">The event that triggers the reducer invocation. 
+    /// Default is <see cref="ChatReducerTriggerEvent.BeforeMessagesRetrieval"/>.</param>
+    /// <param name="reductionStrategy">The strategy to use when reducing chat history. 
+    /// Default is <see cref="ChatHistoryReductionStrategy.Clear"/> which deletes old messages. 
+    /// Use <see cref="ChatHistoryReductionStrategy.Archive"/> to preserve original messages with an archived suffix.</param>
     /// <param name="logger">Optional logger for diagnostics.</param>
     /// <returns>A new instance of <see cref="CosmosChatHistoryProvider"/> initialized from the serialized state.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="cosmosClient"/> is null.</exception>
-    /// <exception cref="ArgumentException">Thrown when the serialized state cannot be deserialized.</exception>
-    public static CosmosChatHistoryProvider CreateFromSerializedState(CosmosClient cosmosClient, JsonElement serializedState, string databaseId, string containerId, JsonSerializerOptions? jsonSerializerOptions = null, ILogger<CosmosChatHistoryProvider>? logger = null)
+    /// <exception cref="ArgumentException">Thrown when <paramref name="databaseId"/> or <paramref name="containerId"/> is null or whitespace,
+    /// or when the serialized state is invalid or cannot be deserialized.</exception>
+    public static CosmosChatHistoryProvider CreateFromSerializedState(CosmosClient cosmosClient, JsonElement serializedState, string databaseId, string containerId, JsonSerializerOptions? jsonSerializerOptions = null,
+#pragma warning disable MEAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+        IChatReducer? reducer = null,
+#pragma warning restore MEAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+        ChatReducerTriggerEvent reducerTriggerEvent = ChatReducerTriggerEvent.BeforeMessagesRetrieval,
+        ChatHistoryReductionStrategy reductionStrategy = ChatHistoryReductionStrategy.Clear,
+        ILogger<CosmosChatHistoryProvider>? logger = null)
     {
         ArgumentNullException.ThrowIfNull(cosmosClient, nameof(cosmosClient));
         ArgumentNullException.ThrowIfNullOrWhiteSpace(databaseId, nameof(databaseId));
@@ -323,8 +375,10 @@ public sealed class CosmosChatHistoryProvider : ChatHistoryProvider, IDisposable
 
         // Use the internal constructor with all parameters to ensure partition key logic is centralized
         return state.UseHierarchicalPartitioning && state.TenantId != null && state.UserId != null
-            ? new CosmosChatHistoryProvider(cosmosClient, databaseId, containerId, conversationId, ownsClient: false, logger, state.TenantId, state.UserId)
-            : new CosmosChatHistoryProvider(cosmosClient, databaseId, containerId, conversationId, ownsClient: false, logger);
+            ? new CosmosChatHistoryProvider(cosmosClient, databaseId, containerId, conversationId, ownsClient: false, logger, state.TenantId, state.UserId) 
+              { ChatReducer = reducer, ReducerTriggerEvent = reducerTriggerEvent, ReductionStrategy = reductionStrategy }
+            : new CosmosChatHistoryProvider(cosmosClient, databaseId, containerId, conversationId, ownsClient: false, logger) 
+              { ChatReducer = reducer, ReducerTriggerEvent = reducerTriggerEvent, ReductionStrategy = reductionStrategy };
     }
 
     /// <inheritdoc />
@@ -334,47 +388,45 @@ public sealed class CosmosChatHistoryProvider : ChatHistoryProvider, IDisposable
 
         _logger.LogDebug("Retrieving chat history for conversation {ConversationId}", ConversationId);
 
-        // Fetch most recent messages in descending order when limit is set, then reverse to ascending
-        var orderDirection = MaxMessagesToRetrieve.HasValue ? "DESC" : "ASC";
-        var query = new QueryDefinition($"SELECT * FROM c WHERE c.conversationId = @conversationId AND c.type = @type ORDER BY c.timestamp {orderDirection}")
-            .WithParameter("@conversationId", ConversationId)
-            .WithParameter("@type", "ChatMessage");
+        // Configure repository settings
+        _repository.MaxItemCount = MaxItemCount;
+        _repository.MaxBatchSize = MaxBatchSize;
 
-        var iterator = _container.GetItemQueryIterator<CosmosMessageDocument>(query, requestOptions: new QueryRequestOptions
-        {
-            PartitionKey = _partitionKey,
-            MaxItemCount = MaxItemCount
-        });
+        // Fetch messages via repository
+        var (documents, totalRu) = await _repository.GetMessagesAsync(
+            ConversationId, 
+            _partitionKey, 
+            MaxMessagesToRetrieve, 
+            cancellationToken).ConfigureAwait(false);
 
+        // Convert documents to ChatMessages
         var messages = new List<ChatMessage>();
-        var totalRu = 0.0;
-
-        while (iterator.HasMoreResults)
+        foreach (var document in documents)
         {
-            var response = await iterator.ReadNextAsync(cancellationToken).ConfigureAwait(false);
-            totalRu += response.RequestCharge;
+            if (string.IsNullOrEmpty(document.Message)) continue;
 
-            foreach (var document in response)
-            {
-                if (MaxMessagesToRetrieve.HasValue && messages.Count >= MaxMessagesToRetrieve.Value)
-                    break;
-
-                if (string.IsNullOrEmpty(document.Message)) continue;
-
-                if (JsonSerializer.Deserialize<ChatMessage>(document.Message, s_defaultJsonOptions) is { } message)
-                    messages.Add(message);
-            }
-
-            if (MaxMessagesToRetrieve.HasValue && messages.Count >= MaxMessagesToRetrieve.Value)
-                break;
+            if (JsonSerializer.Deserialize<ChatMessage>(document.Message, s_defaultJsonOptions) is { } message)
+                messages.Add(message);
         }
-
-        // If we fetched in descending order (most recent first), reverse to ascending order
-        if (MaxMessagesToRetrieve.HasValue)
-            messages.Reverse();
 
         _logger.LogDebug("Retrieved {MessageCount} messages for conversation {ConversationId}, RU: {RequestCharge:F2}", 
             messages.Count, ConversationId, totalRu);
+
+        if (ChatReducer is not null && ReducerTriggerEvent is ChatReducerTriggerEvent.BeforeMessagesRetrieval)
+        {
+            var initialCount = messages.Count;
+            _logger.LogDebug("Evaluating reduce for conversation {ConversationId}", ConversationId);
+            messages = (await ChatReducer.ReduceAsync(messages, cancellationToken).ConfigureAwait(false)).ToList();
+
+            // If reducer actually reduced messages, apply the configured reduction strategy
+            if (messages.Count < initialCount)
+            {
+                _logger.LogDebug("Reducer reduced messages for conversation {ConversationId} from {InitialCount} to {FinalCount}", 
+                    ConversationId, initialCount, messages.Count);
+                
+                await ApplyReductionStrategyAsync(messages, cancellationToken).ConfigureAwait(false);
+            }
+        }
 
         return messages;
     }
@@ -397,140 +449,123 @@ public sealed class CosmosChatHistoryProvider : ChatHistoryProvider, IDisposable
             .Concat(context.ResponseMessages ?? [])
             .ToList();
 
-        if (messageList.Count == 0)
+        await StoreMessagesAsync(messageList, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Applies the configured reduction strategy to replace conversation history with reduced messages.
+    /// For <see cref="ChatHistoryReductionStrategy.Clear"/>: deletes old messages permanently.
+    /// For <see cref="ChatHistoryReductionStrategy.Archive"/>: copies old messages with a timestamp suffix, then deletes originals.
+    /// </summary>
+    /// <param name="reducedMessages">The reduced set of messages to store.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    private async Task ApplyReductionStrategyAsync(IList<ChatMessage> reducedMessages, CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        _logger.LogInformation("[{Strategy} Strategy] Applying reduction for {ConversationId} with {MessageCount} reduced messages",
+            ReductionStrategy.ToString(), ConversationId, reducedMessages.Count);
+
+        string? archivedConversationId = null;
+        var archivedCount = 0;
+
+        // Step 1: Archive messages if strategy requires it (copy only)
+        if (ReductionStrategy == ChatHistoryReductionStrategy.Archive)
+        {
+            var archiveTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            archivedConversationId = $"{ConversationId}_archived_{archiveTimestamp}";
+            archivedCount = await CopyMessagesToArchiveAsync(archivedConversationId, cancellationToken).ConfigureAwait(false);
+        }
+
+        // Step 2: Clear original messages (always - single point of responsibility)
+        var clearedCount = await ClearMessagesAsync(cancellationToken).ConfigureAwait(false);
+
+        // Step 3: Store the reduced messages
+        if (reducedMessages.Count > 0)
+        {
+            await StoreMessagesAsync(reducedMessages, cancellationToken).ConfigureAwait(false);
+        }
+
+        // Log completion
+        if (archivedConversationId is not null)
+        {
+            _logger.LogInformation("Reduction complete for {ConversationId}: {ArchivedCount} copied to {ArchivedId}, {ClearedCount} cleared, {NewCount} stored", 
+                ConversationId, archivedCount, archivedConversationId, clearedCount, reducedMessages.Count);
+        }
+        else
+        {
+            _logger.LogInformation("Reduction complete for {ConversationId}: {ClearedCount} cleared, {NewCount} stored", 
+                ConversationId, clearedCount, reducedMessages.Count);
+        }
+    }
+
+    /// <summary>
+    /// Copies messages to a new archived conversationId.
+    /// This is necessary because Cosmos DB doesn't support updating partition key values directly.
+    /// Note: This method only copies messages; deletion is handled separately by the caller.
+    /// </summary>
+    /// <param name="archivedConversationId">The target conversationId for archived messages.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>The number of messages copied.</returns>
+    private async Task<int> CopyMessagesToArchiveAsync(string archivedConversationId, CancellationToken cancellationToken = default)
+    {
+        _logger.LogDebug("Copying messages from {ConversationId} to {ArchivedConversationId}", ConversationId, archivedConversationId);
+
+        // Get all existing documents
+        var (documentsToArchive, _) = await _repository.GetMessagesAsync(ConversationId, _partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        if (documentsToArchive.Count == 0)
+        {
+            _logger.LogDebug("No messages to copy for conversation {ConversationId}", ConversationId);
+            return 0;
+        }
+
+        // Build the archived partition key
+        var archivedPartitionKey = _useHierarchicalPartitioning
+            ? new PartitionKeyBuilder().Add(_tenantId!).Add(_userId!).Add(archivedConversationId).Build()
+            : new PartitionKey(archivedConversationId);
+
+        // Copy documents to archived conversation
+        await _repository.CopyDocumentsToConversationAsync(
+            documentsToArchive, 
+            archivedConversationId, 
+            archivedPartitionKey, 
+            _tenantId, 
+            _userId, 
+            cancellationToken).ConfigureAwait(false);
+
+        _logger.LogDebug("Copied {Count} messages to {ArchivedConversationId}", documentsToArchive.Count, archivedConversationId);
+
+        return documentsToArchive.Count;
+    }
+
+    /// <summary>
+    /// Stores a list of chat messages to Cosmos DB.
+    /// </summary>
+    /// <param name="messages">The list of messages to store.</param>
+    /// <param name="cancellationToken">A token to cancel the operation.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    private async Task StoreMessagesAsync(IList<ChatMessage> messages, CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        if (messages.Count == 0)
         {
             _logger.LogDebug("No messages to store for conversation {ConversationId}", ConversationId);
             return;
         }
 
-        _logger.LogDebug("Storing {MessageCount} messages for conversation {ConversationId}", messageList.Count, ConversationId);
+        _logger.LogDebug("Storing {MessageCount} messages for conversation {ConversationId}", messages.Count, ConversationId);
 
-        // Emulator: sequential operations (no transactional batch support)
-        // Azure: transactional batch for atomicity
-        if (_isEmulator)
-        {
-            await AddMessagesSequentiallyAsync(messageList, cancellationToken).ConfigureAwait(false);
-        }
-        else if (messageList.Count > 1)
-        {
-            await AddMessagesInBatchAsync(messageList, cancellationToken).ConfigureAwait(false);
-        }
-        else
-        {
-            await AddSingleMessageAsync(messageList[0], cancellationToken).ConfigureAwait(false);
-        }
-
-        _logger.LogDebug("Successfully stored {MessageCount} messages for conversation {ConversationId}", messageList.Count, ConversationId);
-    }
-
-    private async Task AddMessagesSequentiallyAsync(List<ChatMessage> messages, CancellationToken cancellationToken)
-    {
+        // Convert ChatMessages to documents
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        var totalRu = 0.0;
-
-        foreach (var message in messages)
-        {
-            var document = CreateMessageDocument(message, timestamp);
-            try
-            {
-                var response = await _container.CreateItemAsync(document, _partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false);
-                totalRu += response.RequestCharge;
-            }
-            catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.RequestEntityTooLarge)
-            {
-                _logger.LogError(ex, "Message exceeds 2MB limit for conversation {ConversationId}, MessageId: {MessageId}", 
-                    ConversationId, message.MessageId);
-                throw new InvalidOperationException(
-                    $"Message exceeds Cosmos DB's maximum item size limit of 2MB. Message ID: {message.MessageId}", ex);
-            }
-        }
-
-        _logger.LogDebug("Added {MessageCount} messages sequentially for conversation {ConversationId}, RU: {RequestCharge:F2}", 
-            messages.Count, ConversationId, totalRu);
-    }
-
-    private async Task AddMessagesInBatchAsync(List<ChatMessage> messages, CancellationToken cancellationToken)
-    {
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-
-        for (var i = 0; i < messages.Count; i += MaxBatchSize)
-        {
-            var batch = messages.Skip(i).Take(MaxBatchSize).ToList();
-            await ExecuteBatchOperationAsync(batch, timestamp, cancellationToken).ConfigureAwait(false);
-        }
-    }
-
-    private async Task ExecuteBatchOperationAsync(List<ChatMessage> messages, long timestamp, CancellationToken cancellationToken)
-    {
         var documents = messages.Select(m => CreateMessageDocument(m, timestamp)).ToList();
 
-        ValidatePartitionKeyConsistency(documents);
+        // Store via repository
+        await _repository.StoreDocumentsAsync(documents, _partitionKey, cancellationToken).ConfigureAwait(false);
 
-        var batch = _container.CreateTransactionalBatch(_partitionKey);
-        foreach (var doc in documents)
-            batch.CreateItem(doc);
-
-        try
-        {
-            var response = await batch.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-            if (!response.IsSuccessStatusCode)
-            {
-                _logger.LogError("Batch operation failed for conversation {ConversationId}: {StatusCode} - {ErrorMessage}", 
-                    ConversationId, response.StatusCode, response.ErrorMessage);
-                throw new InvalidOperationException($"Batch operation failed: {response.StatusCode} - {response.ErrorMessage}");
-            }
-
-            _logger.LogDebug("Batch added {MessageCount} messages for conversation {ConversationId}, RU: {RequestCharge:F2}", 
-                messages.Count, ConversationId, response.RequestCharge);
-        }
-        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.RequestEntityTooLarge)
-        {
-            _logger.LogWarning("Batch too large, splitting for conversation {ConversationId}: {MessageCount} messages", 
-                ConversationId, messages.Count);
-
-            if (messages.Count == 1)
-            {
-                await AddSingleMessageAsync(messages[0], cancellationToken).ConfigureAwait(false);
-                return;
-            }
-
-            // Split and retry
-            var mid = messages.Count / 2;
-            await ExecuteBatchOperationAsync(messages.Take(mid).ToList(), timestamp, cancellationToken).ConfigureAwait(false);
-            await ExecuteBatchOperationAsync(messages.Skip(mid).ToList(), timestamp, cancellationToken).ConfigureAwait(false);
-        }
-    }
-
-    private void ValidatePartitionKeyConsistency(List<CosmosMessageDocument> documents)
-    {
-        if (documents.Count == 0) return;
-
-        var first = documents[0];
-        var isValid = _useHierarchicalPartitioning
-            ? documents.All(d => d.TenantId == first.TenantId && d.UserId == first.UserId && d.SessionId == first.SessionId)
-            : documents.All(d => d.ConversationId == first.ConversationId);
-
-        if (!isValid)
-            throw new InvalidOperationException("All messages in a batch must share the same partition key.");
-    }
-
-    private async Task AddSingleMessageAsync(ChatMessage message, CancellationToken cancellationToken)
-    {
-        var document = CreateMessageDocument(message, DateTimeOffset.UtcNow.ToUnixTimeSeconds());
-
-        try
-        {
-            var response = await _container.CreateItemAsync(document, _partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false);
-            _logger.LogDebug("Added single message for conversation {ConversationId}, RU: {RequestCharge:F2}", 
-                ConversationId, response.RequestCharge);
-        }
-        catch (CosmosException ex) when (ex.StatusCode == HttpStatusCode.RequestEntityTooLarge)
-        {
-            _logger.LogError(ex, "Message exceeds 2MB limit for conversation {ConversationId}, MessageId: {MessageId}", 
-                ConversationId, message.MessageId);
-            throw new InvalidOperationException(
-                $"Message exceeds Cosmos DB's maximum item size limit of 2MB. Message ID: {message.MessageId}", ex);
-        }
+        _logger.LogDebug("Successfully stored {MessageCount} messages for conversation {ConversationId}", messages.Count, ConversationId);
     }
 
     private CosmosMessageDocument CreateMessageDocument(ChatMessage message, long timestamp) => new()
@@ -569,21 +604,7 @@ public sealed class CosmosChatHistoryProvider : ChatHistoryProvider, IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        var query = new QueryDefinition("SELECT VALUE COUNT(1) FROM c WHERE c.conversationId = @conversationId AND c.Type = @type")
-            .WithParameter("@conversationId", ConversationId)
-            .WithParameter("@type", "ChatMessage");
-
-        var iterator = _container.GetItemQueryIterator<int>(query, requestOptions: new QueryRequestOptions
-        {
-            PartitionKey = _partitionKey
-        });
-
-        var response = await iterator.ReadNextAsync(cancellationToken).ConfigureAwait(false);
-        var count = response.FirstOrDefault();
-
-        _logger.LogDebug("Message count for conversation {ConversationId}: {Count}, RU: {RequestCharge:F2}", 
-            ConversationId, count, response.RequestCharge);
-
+        var (count, _) = await _repository.GetMessageCountAsync(ConversationId, _partitionKey, cancellationToken).ConfigureAwait(false);
         return count;
     }
 
@@ -594,45 +615,7 @@ public sealed class CosmosChatHistoryProvider : ChatHistoryProvider, IDisposable
 
         _logger.LogDebug("Clearing all messages for conversation {ConversationId}", ConversationId);
 
-        var query = new QueryDefinition("SELECT VALUE c.id FROM c WHERE c.conversationId = @conversationId AND c.Type = @type")
-            .WithParameter("@conversationId", ConversationId)
-            .WithParameter("@type", "ChatMessage");
-
-        var iterator = _container.GetItemQueryIterator<string>(query, requestOptions: new QueryRequestOptions
-        {
-            PartitionKey = _partitionKey,
-            MaxItemCount = MaxItemCount
-        });
-
-        var deletedCount = 0;
-        var totalRu = 0.0;
-
-        while (iterator.HasMoreResults)
-        {
-            var response = await iterator.ReadNextAsync(cancellationToken).ConfigureAwait(false);
-            totalRu += response.RequestCharge;
-            var itemIds = response.Where(id => !string.IsNullOrEmpty(id)).ToList();
-
-            if (_isEmulator)
-            {
-                foreach (var itemId in itemIds)
-                {
-                    var deleteResponse = await _container.DeleteItemAsync<object>(itemId, _partitionKey, cancellationToken: cancellationToken).ConfigureAwait(false);
-                    totalRu += deleteResponse.RequestCharge;
-                    deletedCount++;
-                }
-            }
-            else if (itemIds.Count > 0)
-            {
-                var batch = _container.CreateTransactionalBatch(_partitionKey);
-                foreach (var itemId in itemIds)
-                    batch.DeleteItem(itemId);
-
-                var batchResponse = await batch.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-                totalRu += batchResponse.RequestCharge;
-                deletedCount += itemIds.Count;
-            }
-        }
+        var (deletedCount, totalRu) = await _repository.DeleteMessagesAsync(ConversationId, _partitionKey, cancellationToken).ConfigureAwait(false);
 
         _logger.LogInformation("Cleared {DeletedCount} messages for conversation {ConversationId}, RU: {RequestCharge:F2}", 
             deletedCount, ConversationId, totalRu);
@@ -657,21 +640,5 @@ public sealed class CosmosChatHistoryProvider : ChatHistoryProvider, IDisposable
         public string? TenantId { get; set; }
         public string? UserId { get; set; }
         public bool UseHierarchicalPartitioning { get; set; }
-    }
-
-    [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Deserialized by Cosmos DB")]
-    private sealed class CosmosMessageDocument
-    {
-        [JsonPropertyName("id")] public string Id { get; set; } = string.Empty;
-        [JsonPropertyName("conversationId")] public string ConversationId { get; set; } = string.Empty;
-        [JsonPropertyName("timestamp")] public long Timestamp { get; set; }
-        [JsonPropertyName("messageId")] public string? MessageId { get; set; }
-        [JsonPropertyName("role")] public string? Role { get; set; }
-        [JsonPropertyName("message")] public string Message { get; set; } = string.Empty;
-        [JsonPropertyName("type")] public string Type { get; set; } = string.Empty;
-        [JsonPropertyName("ttl")] public int? Ttl { get; set; }
-        [JsonPropertyName("tenantId")] public string? TenantId { get; set; }
-        [JsonPropertyName("userId")] public string? UserId { get; set; }
-        [JsonPropertyName("sessionId")] public string? SessionId { get; set; }
     }
 }
