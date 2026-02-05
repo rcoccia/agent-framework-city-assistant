@@ -57,8 +57,8 @@ builder.Services.AddSingleton<IChatReducer, Microsoft.Extensions.AI.SummarizingC
 builder.Services.AddCosmosChatHistoryProvider("conversations", (sp, opt) => 
 {
     opt.MessageTtlSeconds = (86400 * 7);
-    opt.ChatReducer = sp.GetRequiredService<IChatReducer>();
-    opt.ReductionStoragePolicy = ReductionStoragePolicy.Archive;
+    //opt.ChatReducer = sp.GetRequiredService<IChatReducer>();
+    //opt.ReductionStoragePolicy = ReductionStoragePolicy.Archive;
 });
 
 #pragma warning restore MEAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
